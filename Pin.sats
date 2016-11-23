@@ -4,8 +4,6 @@
 #define	UINTMAX_HALF	2147483647
 
 datasort bit = | O | I
-//sortdef bit = {b:int | 0 <= b; b <= 1} // nat2
-
 
 dataprop bit_lte (bit, bit) =
  | {b:bit} it_lte_lte_refl (b, b) of ()
@@ -34,12 +32,8 @@ dataprop BITEQBOOL (bit, bool) =
 dataprop BITEQINT (bit, int) =
  | B0EQ0 (O, 0) of ()
  | B1EQ1 (I, 1) of ()
- 
-typedef bit_int_t (b:bit) = [v:int] (BITEQINT (b,v) | int v)
 
-//stadef bit2int (b:bit): int = ifint (O == b, 0, 1)
-stadef bit2bool (b:bit): bool = (I == b)
-//stadef bool2bit (b:bool): bit = if b then I else O
+typedef bit_int_t (b:bit) = [v:int] (BITEQINT (b,v) | int v)
 
 stadef Bits8 (b7,b6,b5,b4,b3,b2,b1,b0:bit): bits =
   BitsCons (b0, BitsCons (b1, BitsCons (b2, BitsCons (b3,
@@ -121,26 +115,9 @@ stadef IOPort2int (p:IOPort):int =
 
 typedef ioport_t (p:IOPort) = int (IOPort2int p)
 
-(*stadef bits2int (bs:bits):int = case bs of
- | BitsNil () => 0
- | BitsCons (b, bs) => bit2int (b) + bits2int (bs) * 2
-*)
-//sortdef Pin = {IOPort, int}
 datasort Pin = Pin of (IOPort, int)
-(*
-dataprop PINEQINTPAIR (Pin, int, int) =
- | {p:IOPort}{n:nat | n < 8}
-   PINEQ (Pin (p, n), IOPort2int (p), n) of ()
-*)
 
 typedef pin_t (p:IOPort, n:IntLt (8)) = @(ioport_t p, int n)
-
-(*
-viewdef BitsRegView (v:view, fbitview : int -> bit -> v,
-                     b0:bit, b1:bit, b2:bit, b3:bit, b4:bit, b5:bit, b6:bit, b7:bit} =
-            (fbitview 0 b0, fbitview 1 b1,fbitview 2 b2, fbitview 3 b3,
-             fbitview 4 b4, fbitview 5 b5,fbitview 6 b6, fbitview 7 b7)
-*)
 
 
 // PMR
@@ -177,7 +154,6 @@ fn {b7,b6,b5,b4,b3,b2,b1,b0:bit}{p:IOPort}
   : bits8int_t (b7,b6,b5,b4,b3,b2,b1,b0)
 
 
-
 // PWPR
 
 absview PWPR_V (bit,bit,bit,bit,bit,bit,bit,bit)
@@ -199,20 +175,6 @@ fn {pfswe,b0wi:bit}
 // PFS
 
 absview PFS_V (Pin,bit,bit,bit,bit,bit,bit,bit,bit)
-
-(*
-fn {p:IOPort}{pnum:int}
-   {b0wi,asel,isel,psel4,psel3,psel2,psel1,psel0,
-         ASEL,ISEL,PSEL4,PSEL3,PSEL2,PSEL1,PSEL0:bit}
-  writePFS (
-    !PWPR_V (O,O,O,O,O,O,I,b0wi),
-    !PFS_V (Pin (p,pnum),asel,isel,O,psel4,psel3,psel2,psel1,psel0) >>
-     PFS_V (Pin (p,pnum),ASEL,ISEL,O,PSEL4,PSEL3,PSEL2,PSEL1,PSEL0),
-    !PMR_BIT_V (Pin (p,pnum), O)
-  | pin_t (p,pnum),
-    bits8int_t (ASEL,ISEL,O,PSEL4,PSEL3,PSEL2,PSEL1,PSEL0)
-  ):void
-*)
 
 fn {p:IOPort}{pnum:int}
    {b0wi,asel,isel,psel4,psel3,psel2,psel1,psel0:bit}
@@ -236,65 +198,6 @@ fn {p:IOPort}{pnum:int}{asel,isel,psel4,psel3,psel2,psel1,psel0:bit}
 // TODO 周辺機器の重複禁止ビュー
 //      最初に機器割り当て端子なしの観を発行する。
 //       端子ごとの書き込み許可/禁止のpropが必要。
-(*
-datasort bit_permit = | BitPermBoth | BitPerm1 | BitPerm0
-
-dataprop BITPERMITTED (bit_permit, bit) =
- | {b:bit} BITPERMBOTH (BitPermBoth,b) of ()
- | BITPERM1 (BitPerm1,I) of ()
- | BITPERM0 (BitPerm0,O) of ()
-
-datasort bit_permits =
- | BitsPermNil of ()
- | BitsPermCons of (bit_permit, bit_permits)
-
-dataprop BITSPERMITTED (int, bit_permits, bits) =
- | BITSPERMNIL (0, BitsPermNil, BitsNil) of ()
- | {n:int}{ps:bit_permits}{bs:bits}{p:ps:bit_permit}{b:bit}
-   BITSPERMCONS (n+1,BitsPermCons (p,ps),BitsCons(b,bs)) of
-     (BITPERMITTED (p,b), BITSPERMITTED (n,ps,bs))
-*)
-(*
-dataprop TAKEBITS (int,bits,bits) =
- | {bs0:bits} TAKEBITS0 (0,bs0,BitsNil) of ()
- | {n:int}{bs0,bs1:bits}{b:bit}
-   TAKEBITSN (n+1,BitsCons (b,bs0), BitsCons (b,bs1)) of TAKEBITS (n,bs0,bs1)
-
-dataprop DROPBITS (int,bits,bits) =
- | {bs:bits} DROPBITS0 (0,bs,bs) of ()
- | {n:int}{bs0,bs1:bits}{b0,b1:bit}
-   DROPBITSN (n+1,BitsCons (b0,bs0), BitsCons (b1,bs1)) of DROPBITS (n,bs0,bs1)
-
-datasort bits_permit =
- | BitsPermitEverything of ()
- | BitsPermitLE of int
- | BitsPermitGE of int
- | BitsPermitAnd of (bits_permit, bits_permit)
- | BitsPermitOr of (bits_permit, bits_permit)
-
-dataprop BITSPERMITTED (int, bits_permit, bits) =
- | {n,v:int}{bs:bits} BITSPERMEVERYTHING (n,BitsPermitEverything (),bs) of BITSEQINT (n,bs,v)
- | {n,s,v:int | v <= s}{bs:bits} BITSPERMLE (n,BitsPermitLE (s),bs) of BITSEQINT (n,bs,v)
- | {n,s,v:int | v >= s}{bs:bits} BITSPERMGE (n,BitsPermitLE (s),bs) of BITSEQINT (n,bs,v)
- | {n:int}{bs:bits}{p0,p1:bits_permit} BITSPERMEVAND (n,BitsPermitAnd (p0,p1),bs)
-     of (BITSPERMITTED (n,p0,bs), BITSPERMITTED (n,p1,bs))
- | {n,or:int}{bs:bits}{p0,p1:bits_permit} BITSPERMEVOR (n,BitsPermitOr (p0,p1),bs)
-     of por (BITSPERMITTED (n,p0,bs), BITSPERMITTED (n,p1,bs), or)
-
-prfn BITSPERMEQ {n,s,v:int | s == v}{bs:bits} (BITSEQINT (n,bs,v)):
-  BITSPERMITTED(n,BitsPermitAnd (BitsPermitLE (s),BitsPermitGE (s)) ,bs);
-
-datasort bits_permits =
- | BitsPermitsNil of ()
- | BitsPermitsCons of (bits_permit, bits_permits)
-
-dataprop BITPERMITTEDSS (int, bits_permits, bits) =
- | BITPERMITTEDSSNIL (0, BitsPermitsNil, BitsNil) of ()
- | {n,m:int}{ps:bits_permit}{pss:bits_permits}{bs,bsheads,bstail:bits}
-   BITPERMITTEDSSCONS (n+m, BitsPermitsCons (ps,pss), bs) of
-     (TAKEBITS (n,bs,bsheads), DROPBITS (n,bs,bstail),
-      BITSPERMITTED (n,ps,bsheads), BITPERMITTEDSS (m,pss,bstail))
-*)
 
 
 // PDR
@@ -331,20 +234,6 @@ dataprop BIT_PERMS_PERMIT (int, bit_permissions, bits) =
    BITPERMSPERM_CONS (n+1,BitPermsCons (p,ps),BitsCons (b,bs))
     of (BIT_PERM_PERMIT (p,b),BIT_PERMS_PERMIT (n,ps,bs))
 
-//absprop PDR_PERMIT (Pin,bits_permits)
-(*absprop PDR_PERMIT (Pin,
-  bits_permit,bits_permit,bits_permit,bits_permit,
-  bits_permit,bits_permit,bits_permit,bits_permit)*)
-//praxi PDR_PERMIT ():(Pin,bits_permits)
-
-(*propdef {p:pin}{p0,p1,p2,p3,p4,p5,p6,p7:bits_permit}
-        {b7,b6,b5,b4,b3,b2,b1,b0:bit}{v:int}
-  PDR_PERMIT (PDR_PERMIT (p,p0,p1,p2,p3,p4,p5,p6,p7),bit,bit,bit,bit,bit,bit,bit,bit,int) =
-    (BITSPERMIT (1,p0,b0),BITSPERMIT (1,p1,b1),BITSPERMIT (1,p2,b2),BITSPERMIT (1,p3,b3),
-     BITSPERMIT (1,p4,b4),BITSPERMIT (1,p5,b5),BITSPERMIT (1,p6,b6),BITSPERMIT (1,p7,b7),
-     BITSEQINT (8,Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),v))
-*)
-
 absprop PDR_PERMISSION (IOPort,bit_permissions)
 
 dataprop PDR_PERMIT (IOPort,bits) =
@@ -360,9 +249,6 @@ fn {p:IOPort}{b7,b6,b5,b4,b3,b2,b1,b0,c7,c6,c5,c4,c3,c2,c1,c0:bit}{v: int}
 fn {p:IOPort}{b7,b6,b5,b4,b3,b2,b1,b0:bit}
   readPDR (!PDR_V (p,b7,b6,b5,b4,b3,b2,b1,b0) | ioport_t p)
   : bits8int_t (b7,b6,b5,b4,b3,b2,b1,b0)
-
-//stadef writable2pdrbit (writable:bool) = bool2bit (writable)
-stadef pdrbit2writable (b:bit) = bit2bool (b)
 
 
 // PODR
