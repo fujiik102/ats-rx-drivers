@@ -24,6 +24,7 @@ staload "Pin.sats"
 
 implement main0 () = () // a dummy implementation for [main]
 
+// レジスタ観の初期化関数には、-<lin>タグを付けて、一回だけ呼ばれることを保証する。
 
 ////
 fn {bs,cs:bits}{p:IOPort}

@@ -126,7 +126,7 @@ absprop PDR_PERMISSION (IOPort,bit_permissions)
 dataprop PDR_PERMIT (IOPort,bits) =
  | {p:IOPort}{perms:bit_permissions}{bs:bits}{v:int}
    PDR_PERMIT (p,bs)
-    of (PDR_PERMISSION (p,perms),BIT_PERMS_PERMIT (8,perms,bs))
+    of (PDR_PERMISSION (p,perms),BIT_REQUIRE_PERMSSIONS (8,perms,bs))
 
 fn {p:IOPort}{bs,cs:bits}{v: int}
   writePDR (PDR_PERMIT (p,cs),
@@ -157,7 +157,7 @@ absprop PODR_PERMISSION (IOPort,bit_permissions)
 dataprop PODR_PERMIT (IOPort,bits) =
  | {p:IOPort}{perms:bit_permissions}{bs:bits}{v:int}
    PODR_PERMIT (p,bs)
-    of (PODR_PERMISSION (p,perms),BIT_PERMS_PERMIT (8,perms,bs))
+    of (PODR_PERMISSION (p,perms),BIT_REQUIRE_PERMSSIONS (8,perms,bs))
 
 fn {p:IOPort}{bs,cs:bits}
   writePODR (PODR_PERMIT (p,cs),
@@ -198,6 +198,12 @@ fn readIO {rw,outv,actualv:bool} (GPIOView (ud,rw,outv) | id:Pin): (GPIOView (id
 *)
 
 // TODO パッケージ毎の差異に対応するための初期absprop
+////
+fn rx110_64pins_initial_views ():<lin> (
+    PODR_PERMISSION (Port0,BitPermissions8 (Permit,Permit,Permit,Permit,Permit,Permit,Permit,Permit)),
+    PODR_V          (Port0,Bits8(O,O,O,O,O,O,O,O)),
+    
+)
 
 //
 // 実装
