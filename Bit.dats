@@ -47,18 +47,6 @@ primplement bitscons0_eq_double     {bs}{n,v} (bitseq) = BEQCONS0 (bitseq)
 primplement bitscons0_eq__cons1_inc {bs}{n,v} (bitseq) = let prval BEQCONS0 (bitseq') = bitseq in BEQCONS1 (bitseq') end
 
 
-dataprop EQBITS (bits, bits) = {bs:bits} EQBITS (bs, bs)
-extern praxi eqbits_make {bs,cs:bits | bs == cs} (): EQBITS (bs,cs)
-
-
-dataprop EQBIT (bit, bit) = {b:bit} EQBIT (b, b)
-extern praxi eqbit_make {b,c:bit | b == c} (): EQBIT (b,c)
-
-extern praxi bit_eq_refl {b:bit} ():[b == b] void
-
-extern praxi bits_eq_refl {bs:bits} ():[bs == bs] void
-
-
 prfn bits_cons_eq {b,c:bit | b == c}{bs,cs:bits | bs == cs} ()
                    :[BitsCons (b,bs) == BitsCons (c,cs)] void
  = let
@@ -66,32 +54,6 @@ prfn bits_cons_eq {b,c:bit | b == c}{bs,cs:bits | bs == cs} ()
      prval EQBITS () = eqbits_make {bs,cs} ()
    in bits_eq_refl {BitsCons (b,bs)} () end
 
-
-dataprop BIT_LOR (bit,bit,bit) =
- | BIT_LOR_II (I,I,I) of ()
- | BIT_LOR_IO (I,O,I) of ()
- | BIT_LOR_OI (O,I,I) of ()
- | BIT_LOR_OO (O,O,O) of ()
-
-dataprop BITS_LOR (bits,bits,bits) =
- | BITS_LOR_NIL  (BitsNil,BitsNil,BitsNil) of ()
- | {b,c,d:bit}{bs,cs,ds:bits}
-   BITS_LOR_CONS (BitsCons (b,bs),BitsCons (c,cs),BitsCons (d,ds))
-    of (BIT_LOR (b,c,d), BITS_LOR (bs,cs,ds))
-
-extern fn {n:int}{bs,cs:bits} bits_uint_lor (n:bits_uint_t (n,bs),m:bits_uint_t (n,cs)):
-   [ds:bits] (BITS_LOR (bs,cs,ds) | bits_uint_t (n,ds))
-
-dataprop SINGLE_BIT_BITS (int,int,bits) =
- | {n:int}{bs:bits}    SINGLE_BIT_BITS_bas (n+1,n, BitsCons (I,bs))
-                                        of (BITSEQINT (n,bs,0))
- | {n,bn:int}{bs:bits} SINGLE_BIT_BITS_ind (n+1,bn,BitsCons (O,bs))
-                                        of (SINGLE_BIT_BITS (n,bn,bs))
-
-// 1 << bn
-extern fn {n,bn:int} make_single_bit (bn:uint bn): [bs:bits] (SINGLE_BIT_BITS (n,bn,bs) | bits_uint_t (n,bs))
-
-// TODO EQINTを参考にして、同値に関する証拠を作る証明関数を構築する。
 
 prfn lor_0_nochange {b,c:bit} (lor_p:BIT_LOR (b,O,c)):[b == c] void
  = case+ lor_p of
@@ -213,18 +175,6 @@ implement {bs:bits} setBitBits {n,bn} (v,bn)
      prval changebit = singlebitslor__changebit1 (bs_single, bs_lor)
    in (changebit | lor_v) end
 
-dataprop BIT_LAND (bit,bit,bit) =
- | BIT_LAND_II (I,I,I) of ()
- | BIT_LAND_IO (I,O,O) of ()
- | BIT_LAND_OI (O,I,O) of ()
- | BIT_LAND_OO (O,O,O) of ()
-
-dataprop BITS_LAND (bits,bits,bits) =
- | BITS_LAND_NIL  (BitsNil,BitsNil,BitsNil) of ()
- | {b,c,d:bit}{bs,cs,ds:bits}
-   BITS_LAND_CONS (BitsCons (b,bs),BitsCons (c,cs),BitsCons (d,ds))
-    of (BIT_LAND (b,c,d), BITS_LAND (bs,cs,ds))
-
 prfun bitsland__eq_bitslen {bs,cs,ds:bits} .<bs>. (bsand:BITS_LAND (bs,cs,ds))
                            :[n:int] (BITSLEN (bs,n),BITSLEN (cs,n),BITSLEN (ds,n))
  = case+ bsand of
@@ -233,16 +183,6 @@ prfun bitsland__eq_bitslen {bs,cs,ds:bits} .<bs>. (bsand:BITS_LAND (bs,cs,ds))
        prval (bs'len,cs'len,ds'len) = bitsland__eq_bitslen (bs'and)
      in (BITSLENCONS (bs'len),BITSLENCONS (cs'len),BITSLENCONS (ds'len)) end
 
-dataprop BIT_NOT (bit,bit) =
- | BIT_NOT1 (I,O)
- | BIT_NOT0 (O,I)
-
-dataprop BITS_NOT (bits,bits) =
- | BITS_NOT_NIL  (BitsNil,BitsNil) of ()
- | {b,c:bit}{bs,cs:bits}
-   BITS_NOT_CONS (BitsCons (b,bs),BitsCons (c,cs))
-    of (BIT_NOT (b,c), BITS_NOT (bs,cs))
-
 prfun bitsnot__eq_bitslen {bs,cs:bits} .<bs>.(bs_not:BITS_NOT (bs,cs))
                           :[n:int] (BITSLEN (bs,n),BITSLEN (cs,n))
  = case+ bs_not of
@@ -250,12 +190,6 @@ prfun bitsnot__eq_bitslen {bs,cs:bits} .<bs>.(bs_not:BITS_NOT (bs,cs))
    | BITS_NOT_CONS (bnot,bs'not) => let
        prval (bs'len,cs'len) = bitsnot__eq_bitslen (bs'not)
    in (BITSLENCONS (bs'len),BITSLENCONS (cs'len)) end
-
-extern fn {n:int}{bs,cs:bits} bits_uint_land (n:bits_uint_t (n,bs),m:bits_uint_t (n,cs)):
-   [ds:bits] (BITS_LAND (bs,cs,ds) | bits_uint_t (n,ds))
-
-extern fn {n:int}{bs:bits} bits_uint_not (n:bits_uint_t (n,bs)):
-   [cs:bits] (BITS_NOT (bs,cs) | bits_uint_t (n,cs))
 
 prfn land_1_nochange {b,c:bit} (band:BIT_LAND (b,I,c)):[b == c] void
  = case+ band of
@@ -415,12 +349,6 @@ stadef neq_bit_bit (b,c:bit):bool = (b == I  &&  c == O) ||
                                     (b == O  &&  c == I)
 *)
 
-stadef neq_bit_bit (b,c:bit):bool = ~(b == c)
-
-stadef != = neq_bit_bit
-
-extern praxi bit_not_I_eq_O ():[~(I == O)] void
-extern praxi bit_not_eq_comm {b,c:bit | ~(b == c)} ():[~(c == b)] void
 
 prfn bit_not_O_eq_I ():[~(O == I)] void
  = let
