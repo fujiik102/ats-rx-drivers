@@ -30,6 +30,8 @@ dataprop BITSLEN (bits,int) =
  | {n:int}{b:bit}{bs:bits}
    BITSLENCONS (BitsCons (b,bs),n+1) of BITSLEN (bs,n)
 
+praxi bitslen_nat {n:int}{bs:bits} (BITSLEN (bs,n)):[0 <= n] void
+
 dataprop BITEQBOOL (bit, bool) =
  | B0EQFALSE (O, false) of ()
  | B1EQTRUE  (I, true ) of ()
@@ -38,8 +40,7 @@ dataprop BITEQINT (bit, int) =
  | B0EQ0 (O, 0) of ()
  | B1EQ1 (I, 1) of ()
 
-// TODO prfnに変更して証明する。
-praxi {v:int} beqint_bit_eq {b,c:bit | b == c} (BITEQINT (b,v)):BITEQINT (c,v)
+prfn {v:int} beqint_bit_eq {b,c:bit | b == c} (BITEQINT (b,v)):BITEQINT (c,v)
 
 typedef bit_uint_t (b:bit) = [v:int] (BITEQINT (b,v) | uint v)
 
@@ -159,8 +160,7 @@ fn {bs:bits}
   testBitBits {n,bn:nat | bn < n}{n < INTBITS} (bits_uint_t (n,bs),uint bn)
   : [b:bool] (TEST_BIT_BITS (bs,bn,b) | bool b)
 
-// TODO prfnに変更して証明する。
-praxi {bs,cs:bits}{n,bn:int} chgbit_bit_eq {b,c:bit | b == c}
+prfn {bs,cs:bits}{n,bn:int} chgbit_bit_eq {b,c:bit | b == c}
        (CHANGE_BIT_BITS (n,bs,bn,b,cs)):
         CHANGE_BIT_BITS (n,bs,bn,c,cs)
 
@@ -229,7 +229,6 @@ fn {n:int}{bs:bits} bits_uint_not (n:bits_uint_t (n,bs)):
 
 
 
-// TODO bit_permission関連の証明を書く。
 datasort permission = Permit | Prohibit
 
 datasort bit_permission = BitPermission of
@@ -243,11 +242,12 @@ stadef BitPermissions8 (b7_0,b7_1,b6_0,b6_1,b5_0,b5_1,b4_0,b4_1,
                         b3_0,b3_1,b2_0,b2_1,b1_0,b1_1,b0_0,b0_1:permission): bit_permissions =
   BitPermsCons (BitPermission (b0_0,b0_1),BitPermsCons (BitPermission (b1_0,b1_1),
   BitPermsCons (BitPermission (b2_0,b2_1),BitPermsCons (BitPermission (b3_0,b3_1),
-  BitPermsCons (BitPermission (b4_0,b4_1),BitPermsCons (BitPermission (b5_0,b5_1), BitPermsCons (BitPermission(b4_0,b4_1),
+  BitPermsCons (BitPermission (b4_0,b4_1),BitPermsCons (BitPermission (b5_0,b5_1),
   BitPermsCons (BitPermission (b6_0,b6_1),BitPermsCons (BitPermission (b7_0,b7_1),
-  BitPermsNil ())))))))))
+  BitPermsNil ()))))))))
 
 // TODO 許可された　にするべき？
+//      Permit certificate?
 dataprop BIT_REQUIRE_PERMISSION (bit_permission,bit) =
  | {p1:permission} BITREQPERM_0 (BitPermission (Permit,p1),O) of ()
  | {p0:permission} BITREQPERM_1 (BitPermission (p0,Permit),I) of ()
@@ -261,36 +261,36 @@ dataprop BIT_REQUIRE_PERMISSIONS (int,bit_permissions,bits) =
 
 prfn breqperm_0 {bs:bits}(
     BIT_REQUIRE_PERMISSIONS (8,BitPermissions8 (
-        Prohibit,Permit, Prohibit,Permit, Prohibit,Permit, Prohibit,Permit,
-        Prohibit,Permit, Prohibit,Permit, Prohibit,Permit, Prohibit,Permit),
+        Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit,
+        Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit),
       bs))
     : [bs == Bits8 (O,O,O,O,O,O,O,O)] void
 
 prfn breqperm_1 {bs:bits}(
     BIT_REQUIRE_PERMISSIONS (8,BitPermissions8 (
-        Prohibit,Permit, Prohibit,Permit, Prohibit,Permit, Prohibit,Permit,
-        Prohibit,Permit, Prohibit,Permit, Prohibit,Permit, Permit,Prohibit),
+        Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit,
+        Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Prohibit,Permit),
       bs))
     : [bs == Bits8 (O,O,O,O,O,O,O,I)] void
 
 prfn breqperm_2 {bs:bits}(
     BIT_REQUIRE_PERMISSIONS (8,BitPermissions8 (
-        Prohibit,Permit, Prohibit,Permit, Prohibit,Permit, Prohibit,Permit,
-        Prohibit,Permit, Prohibit,Permit, Permit,Prohibit, Prohibit,Permit),
+        Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit,
+        Permit,Prohibit, Permit,Prohibit, Prohibit,Permit, Permit,Prohibit),
       bs))
     : [bs == Bits8 (O,O,O,O,O,O,I,O)] void
 
 prfn breqperm_128 {bs:bits}(
     BIT_REQUIRE_PERMISSIONS (8,BitPermissions8 (
-        Permit,Prohibit, Prohibit,Permit, Prohibit,Permit, Prohibit,Permit,
-        Prohibit,Permit, Prohibit,Permit, Prohibit,Permit, Prohibit,Permit),
+        Prohibit,Permit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit,
+        Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit),
       bs))
     : [bs == Bits8 (I,O,O,O,O,O,O,O)] void
 
 prfn breqperm_255 {bs:bits}(
     BIT_REQUIRE_PERMISSIONS (8,BitPermissions8 (
-        Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit,
-        Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit),
+        Prohibit,Permit, Prohibit,Permit, Prohibit,Permit, Prohibit,Permit, 
+        Prohibit,Permit, Prohibit,Permit, Prohibit,Permit, Prohibit,Permit),
       bs))
     : [bs == Bits8 (I,I,I,I,I,I,I,I)] void
 
@@ -304,3 +304,18 @@ prfn breqperm_inhaditat {any_prop:prop}{n:int}{bs:bits}{ps:bit_permissions}
     (BIT_REQUIRE_PERMISSIONS (n,
        BitPermsCons(BitPermission (Prohibit,Prohibit), ps),
        bs)): any_prop
+
+dataprop BIT_PERMS_ADD (bit_permissions,bit_permissions,bit_permissions) =
+| {ps:bit_permissions} BIT_PERMS_ADD_NIL (BitPermsNil (),ps,ps) of ()
+| {p:bit_permission}{ps,qs,rs:bit_permissions}
+  BIT_PERMS_ADD_CONS (BitPermsCons (p,ps),qs,BitPermsCons (p,rs))
+    of BIT_PERMS_ADD (ps,qs,rs)
+
+prfun breqperms_prohibit {any_prop:prop}{n:int}{bs:bits}{ps,qs,rs:bit_permissions}
+    (BIT_PERMS_ADD (ps,BitPermsCons (BitPermission (Prohibit,Prohibit),qs),rs),
+     BIT_REQUIRE_PERMISSIONS (n,rs,bs))
+    : any_prop
+
+
+
+

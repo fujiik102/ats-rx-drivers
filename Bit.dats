@@ -441,10 +441,198 @@ implement {bs} testBitBits {n,bn} (v,bn)
      prval (bstest)                   = singlebit_and_bs_neq0__testbit (bs_and_cs,cs_is_single,dseqint)
    in (bstest | i2u(0) != uint_v) end
 
+(*
+datasort permission = Permit | Prohibit
 
+datasort bit_permission = BitPermission of
+  (permission(*of 0*),permission(*of 1*))
 
+datasort bit_permissions = 
+ | BitPermsNil of ()
+ | BitPermsCons of (bit_permission,bit_permissions)
 
+stadef BitPermissions8 (b7_0,b7_1,b6_0,b6_1,b5_0,b5_1,b4_0,b4_1,
+                        b3_0,b3_1,b2_0,b2_1,b1_0,b1_1,b0_0,b0_1:permission): bit_permissions =
+  BitPermsCons (BitPermission (b0_0,b0_1),BitPermsCons (BitPermission (b1_0,b1_1),
+  BitPermsCons (BitPermission (b2_0,b2_1),BitPermsCons (BitPermission (b3_0,b3_1),
+  BitPermsCons (BitPermission (b4_0,b4_1),BitPermsCons (BitPermission (b5_0,b5_1),
+  BitPermsCons (BitPermission (b6_0,b6_1),BitPermsCons (BitPermission (b7_0,b7_1),
+  BitPermsNil ())))))))))
 
+// TODO 許可された　にするべき？
+dataprop BIT_REQUIRE_PERMISSION (bit_permission,bit) =
+ | {p1:permission} BITREQPERM_0 (BitPermission (Permit,p1),O) of ()
+ | {p0:permission} BITREQPERM_1 (BitPermission (p0,Permit),I) of ()
+
+dataprop BIT_REQUIRE_PERMISSIONS (int,bit_permissions,bits) =
+ | BITREQPERMS_NIL (0, BitPermsNil, BitsNil) of ()
+ | {n:int}{p:bit_permission}{ps:bit_permissions}{b:bit}{bs:bits}
+   BITREQPERMS_CONS (n+1,BitPermsCons (p,ps),BitsCons (b,bs))
+    of (BIT_REQUIRE_PERMISSION (p,b),BIT_REQUIRE_PERMISSIONS (n,ps,bs))
+*)
+
+(*
+prfn breqperm_0 {bs:bits}(
+    BIT_REQUIRE_PERMISSIONS (8,BitPermissions8 (
+        Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit,
+        Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit),
+      bs))
+    : [bs == Bits8 (O,O,O,O,O,O,O,O)] void
+*) 
+primplement breqperm_0 {bs}(perms)
+ = let
+     prval BITREQPERMS_CONS (BITREQPERM_0 (), BITREQPERMS_CONS (BITREQPERM_0 (),
+           BITREQPERMS_CONS (BITREQPERM_0 (), BITREQPERMS_CONS (BITREQPERM_0 (),
+           BITREQPERMS_CONS (BITREQPERM_0 (), BITREQPERMS_CONS (BITREQPERM_0 (),
+           BITREQPERMS_CONS (BITREQPERM_0 (), BITREQPERMS_CONS (BITREQPERM_0 (),
+           BITREQPERMS_NIL ())))))))) = perms
+   in bits_eq_refl {bs}() end
+
+(*
+prfn breqperm_1 {bs:bits}(
+    BIT_REQUIRE_PERMISSIONS (8,BitPermissions8 (
+        Prohibit,Permit, Prohibit,Permit, Prohibit,Permit, Prohibit,Permit,
+        Prohibit,Permit, Prohibit,Permit, Prohibit,Permit, Permit,Prohibit),
+      bs))
+    : [bs == Bits8 (O,O,O,O,O,O,O,I)] void
+*)
+primplement breqperm_1 {bs}(perms)
+ = let
+     prval BITREQPERMS_CONS (BITREQPERM_1 (), BITREQPERMS_CONS (BITREQPERM_0 (),
+           BITREQPERMS_CONS (BITREQPERM_0 (), BITREQPERMS_CONS (BITREQPERM_0 (),
+           BITREQPERMS_CONS (BITREQPERM_0 (), BITREQPERMS_CONS (BITREQPERM_0 (),
+           BITREQPERMS_CONS (BITREQPERM_0 (), BITREQPERMS_CONS (BITREQPERM_0 (),
+           BITREQPERMS_NIL ())))))))) = perms
+   in bits_eq_refl {bs}() end
+
+(*
+prfn breqperm_2 {bs:bits}(
+    BIT_REQUIRE_PERMISSIONS (8,BitPermissions8 (
+        Prohibit,Permit, Prohibit,Permit, Prohibit,Permit, Prohibit,Permit,
+        Prohibit,Permit, Prohibit,Permit, Permit,Prohibit, Prohibit,Permit),
+      bs))
+    : [bs == Bits8 (O,O,O,O,O,O,I,O)] void
+*)
+primplement breqperm_2 {bs}(perms)
+ = let
+     prval BITREQPERMS_CONS (BITREQPERM_0 (), BITREQPERMS_CONS (BITREQPERM_1 (),
+           BITREQPERMS_CONS (BITREQPERM_0 (), BITREQPERMS_CONS (BITREQPERM_0 (),
+           BITREQPERMS_CONS (BITREQPERM_0 (), BITREQPERMS_CONS (BITREQPERM_0 (),
+           BITREQPERMS_CONS (BITREQPERM_0 (), BITREQPERMS_CONS (BITREQPERM_0 (),
+           BITREQPERMS_NIL ())))))))) = perms
+   in bits_eq_refl {bs}() end
+
+(*
+prfn breqperm_128 {bs:bits}(
+    BIT_REQUIRE_PERMISSIONS (8,BitPermissions8 (
+        Permit,Prohibit, Prohibit,Permit, Prohibit,Permit, Prohibit,Permit,
+        Prohibit,Permit, Prohibit,Permit, Prohibit,Permit, Prohibit,Permit),
+      bs))
+    : [bs == Bits8 (I,O,O,O,O,O,O,O)] void
+*)
+primplement breqperm_128 {bs}(perms)
+ = let
+     prval BITREQPERMS_CONS (BITREQPERM_0 (), BITREQPERMS_CONS (BITREQPERM_0 (),
+           BITREQPERMS_CONS (BITREQPERM_0 (), BITREQPERMS_CONS (BITREQPERM_0 (),
+           BITREQPERMS_CONS (BITREQPERM_0 (), BITREQPERMS_CONS (BITREQPERM_0 (),
+           BITREQPERMS_CONS (BITREQPERM_0 (), BITREQPERMS_CONS (BITREQPERM_1 (),
+           BITREQPERMS_NIL ())))))))) = perms
+   in bits_eq_refl {bs}() end
+
+(*
+prfn breqperm_255 {bs:bits}(
+    BIT_REQUIRE_PERMISSIONS (8,BitPermissions8 (
+        Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit,
+        Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit),
+      bs))
+    : [bs == Bits8 (I,I,I,I,I,I,I,I)] void
+*)
+primplement breqperm_255 {bs}(perms)
+ = let
+     prval BITREQPERMS_CONS (BITREQPERM_1 (), BITREQPERMS_CONS (BITREQPERM_1 (),
+           BITREQPERMS_CONS (BITREQPERM_1 (), BITREQPERMS_CONS (BITREQPERM_1 (),
+           BITREQPERMS_CONS (BITREQPERM_1 (), BITREQPERMS_CONS (BITREQPERM_1 (),
+           BITREQPERMS_CONS (BITREQPERM_1 (), BITREQPERMS_CONS (BITREQPERM_1 (),
+           BITREQPERMS_NIL ())))))))) = perms
+   in bits_eq_refl {bs}() end
+
+(*
+prfn breqperm_all {bs:bits}(BITSLEN (bs,8)):
+    BIT_REQUIRE_PERMISSIONS (8,BitPermissions8 (
+        Permit,Permit, Permit,Permit, Permit,Permit, Permit,Permit,
+        Permit,Permit, Permit,Permit, Permit,Permit, Permit,Permit),
+      bs)
+*)
+
+prfn bperm_all {b:bit} ():
+       BIT_REQUIRE_PERMISSION (BitPermission (Permit,Permit),b)
+ = scase b of
+   | I () => BITREQPERM_1 ()
+   | O () => BITREQPERM_0 ()
+
+prfun bitslen0__nil {bs:bits}.<bs>.(bslen:BITSLEN (bs,0)): [bs == BitsNil] void
+ = case+ bslen of
+   | BITSLENNIL ()        =>   bits_eq_refl {bs}()
+   | BITSLENCONS (bs'len) =/=> bitslen_nat (bs'len)
+
+primplement breqperm_all {bs8}(bs8len)
+ = let
+     prval BITSLENCONS {n7}{b8}{bs7}(bs7len) = bs8len
+     prval BITSLENCONS {n6}{b7}{bs6}(bs6len) = bs7len
+     prval BITSLENCONS {n5}{b6}{bs5}(bs5len) = bs6len
+     prval BITSLENCONS {n4}{b5}{bs4}(bs4len) = bs5len
+     prval BITSLENCONS {n3}{b4}{bs3}(bs3len) = bs4len
+     prval BITSLENCONS {n2}{b3}{bs2}(bs2len) = bs3len
+     prval BITSLENCONS {n1}{b2}{bs1}(bs1len) = bs2len
+     prval BITSLENCONS {n0}{b1}{bs0}(bs0len) = bs1len
+     prval () = bitslen0__nil {bs0}(bs0len)
+     prval EQBITS () = eqbits_make {bs0,BitsNil}()
+   in BITREQPERMS_CONS (bperm_all {b8}(), BITREQPERMS_CONS (bperm_all {b7}(),
+      BITREQPERMS_CONS (bperm_all {b6}(), BITREQPERMS_CONS (bperm_all {b5}(),
+      BITREQPERMS_CONS (bperm_all {b4}(), BITREQPERMS_CONS (bperm_all {b3}(),
+      BITREQPERMS_CONS (bperm_all {b2}(), BITREQPERMS_CONS (bperm_all {b1}(),
+      BITREQPERMS_NIL ())))))))) end
+
+(*
+prfn breqperm_inhaditat {any_prop:prop}{n:int}{bs:bits}{ps:bit_permissions}
+    (BIT_REQUIRE_PERMISSIONS (n,
+       BitPermsCons(BitPermission (Prohibit,Prohibit), ps),
+       bs)): any_prop
+*)
+
+primplement breqperm_inhaditat {any_prop}{n}{bs}{ps}(perms)
+ = let
+     prval BITREQPERMS_CONS (perm, perms') = perms
+   in case+ perm of
+      | BITREQPERM_0 () =/=> ()
+      | BITREQPERM_1 () =/=> ()
+   end
+
+(*
+prfun breqperms_prohibit {any_prop:prop}{n:int}{bs:bits}{ps,qs,rs:bit_permissions}
+    (BIT_PERMS_ADD (ps,BitPermsCons (BitPermission (Prohibit,Prohibit),qs),rs),
+     BIT_REQUIRE_PERMISSIONS (n,rs,bs))
+    : any_prop
+*)
+primplement breqperms_prohibit {any_prop}{n}{bs}{ps,qs',rs}(ps_qs_add,perms)
+ = case+ ps_qs_add of
+   | BIT_PERMS_ADD_NIL () => breqperm_inhaditat (perms)
+   | BIT_PERMS_ADD_CONS {p}{ps',qs,rs'}(ps'_qs_add) => let
+       prval BITREQPERMS_CONS {n'}{r2}{rs'2}{b}{bs'} (perm, perms') = perms
+     in breqperms_prohibit {any_prop}{n'}{bs'}{ps',qs',rs'}(ps'_qs_add,perms') end
+(*
+prfn {v:int} beqint_bit_eq {b,c:bit | b == c} (BITEQINT (b,v)):BITEQINT (c,v)
+*)
+primplement {v} beqint_bit_eq {b,c} (b_eq_v)
+ = let prval EQBIT () = eqbit_make {b,c}() in b_eq_v end
+
+(*
+prfn {bs,cs:bits}{n,bn:int} chgbit_bit_eq {b,c:bit | b == c}
+       (CHANGE_BIT_BITS (n,bs,bn,b,cs)):
+        CHANGE_BIT_BITS (n,bs,bn,c,cs)
+*)
+primplement {bs,cs}{n,bn} chgbit_bit_eq {b,c}(bs_chg_b_at_bn)
+ = let prval EQBIT () = eqbit_make {b,c}() in bs_chg_b_at_bn end
 
 
 
