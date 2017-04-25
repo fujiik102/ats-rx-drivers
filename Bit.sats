@@ -17,14 +17,6 @@ dataprop bit_lte (bit, bit) =
 
 datasort bits = BitsNil of () | BitsCons of (bit, bits)
 
-// TODO BITEQINTをベースにした定義に変更する？
-dataprop BITSEQINT (int, bits, int) =
- | BEQNIL (0,BitsNil,0) of ()
- | {n:int}{bs:bits}{v:int | v <= INTMAX_HALF}
-   BEQCONS0 (n+1,BitsCons (O, bs),v+v) of (BITSEQINT (n,bs,v))
- | {n:int}{bs:bits}{v:int | v <= INTMAX_HALF}
-   BEQCONS1 (n+1,BitsCons (I, bs),v+v+1) of (BITSEQINT (n,bs,v))
-
 dataprop BITSLEN (bits,int) =
  | BITSLENNIL (BitsNil,0) of ()
  | {n:int}{b:bit}{bs:bits}
@@ -43,6 +35,13 @@ dataprop BITEQINT (bit, int) =
 prfn {v:int} beqint_bit_eq {b,c:bit | b == c} (BITEQINT (b,v)):BITEQINT (c,v)
 
 typedef bit_uint_t (b:bit) = [v:int] (BITEQINT (b,v) | uint v)
+
+// TODO BITEQINTをベースにした定義に変更する？
+dataprop BITSEQINT (int, bits, int) =
+ | BEQNIL (0,BitsNil,0) of ()
+ | {n:int}{b:bit}{bs:bits}{v,bitv:int | v <= INTMAX_HALF}
+   BEQCONS (n+1,BitsCons (b, bs),v+v+bitv)
+   of (BITSEQINT (n,bs,v),BITEQINT (b,bitv))
 
 stadef Bits8 (b7,b6,b5,b4,b3,b2,b1,b0:bit): bits =
   BitsCons (b0, BitsCons (b1, BitsCons (b2, BitsCons (b3,

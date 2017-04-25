@@ -26,26 +26,38 @@ staload "Bit.sats"
 implement main0 () = () // a dummy implementation for [main]
 
 
-#include "Bit.hats"
+prfn {b:bit}{v:int} beqint_nat2 (beqint:BITEQINT (b,v)):[0 <= v][v <= 1] void
+ = case+ beqint of
+   | B0EQ0 () => ()
+   | B1EQ1 () => ()
+
+prfn {b:bit} beq0__b_is_O (beqint:BITEQINT (b,0)):[O == b] void
+ = case+ beqint of
+   | B0EQ0 () =>   bit_eq_refl {b}()
+   | B1EQ1 () =/=> ()
+
+prfn {b:bit} beq1__b_is_I (beqint:BITEQINT (b,1)):[I == b] void
+ = case+ beqint of
+   | B0EQ0 () =/=> ()
+   | B1EQ1 () =>   bit_eq_refl {b}()
 
 
 primplement bits_test1 () = BEQNIL()
 primplement bits8_test2 () = 
-  BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQNIL))))))))
+  BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQNIL,B0EQ0),B0EQ0),B0EQ0),B0EQ0),B0EQ0),B0EQ0),B0EQ0),B0EQ0)
 primplement bits8_test3 () = 
-  BEQCONS1 (BEQCONS1 (BEQCONS1 (BEQCONS1 (BEQCONS1 (BEQCONS1 (BEQCONS1 (BEQCONS1 (BEQNIL))))))))
-primplement bits8_test4_1 () = BEQCONS1 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQNIL))))))))
-primplement bits8_test4_2 () = BEQCONS0 (BEQCONS1 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQNIL))))))))
-primplement bits8_test4_3 () = BEQCONS0 (BEQCONS0 (BEQCONS1 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQNIL))))))))
-primplement bits8_test4_4 () = BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS1 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQNIL))))))))
-primplement bits8_test4_5 () = BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS1 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQNIL))))))))
-primplement bits8_test4_6 () = BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS1 (BEQCONS0 (BEQCONS0 (BEQNIL))))))))
-primplement bits8_test4_7 () = BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS1 (BEQCONS0 (BEQNIL))))))))
-primplement bits8_test4_8 () = BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS0 (BEQCONS1 (BEQNIL))))))))
+  BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQNIL,B1EQ1),B1EQ1),B1EQ1),B1EQ1),B1EQ1),B1EQ1),B1EQ1),B1EQ1)
+primplement bits8_test4_1 () = BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQNIL,B0EQ0),B0EQ0),B0EQ0),B0EQ0),B0EQ0),B0EQ0),B0EQ0),B1EQ1)
+primplement bits8_test4_2 () = BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQNIL,B0EQ0),B0EQ0),B0EQ0),B0EQ0),B0EQ0),B0EQ0),B1EQ1),B0EQ0)
+primplement bits8_test4_3 () = BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQNIL,B0EQ0),B0EQ0),B0EQ0),B0EQ0),B0EQ0),B1EQ1),B0EQ0),B0EQ0)
+primplement bits8_test4_4 () = BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQNIL,B0EQ0),B0EQ0),B0EQ0),B0EQ0),B1EQ1),B0EQ0),B0EQ0),B0EQ0)
+primplement bits8_test4_5 () = BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQNIL,B0EQ0),B0EQ0),B0EQ0),B1EQ1),B0EQ0),B0EQ0),B0EQ0),B0EQ0)
+primplement bits8_test4_6 () = BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQNIL,B0EQ0),B0EQ0),B1EQ1),B0EQ0),B0EQ0),B0EQ0),B0EQ0),B0EQ0)
+primplement bits8_test4_7 () = BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQNIL,B0EQ0),B1EQ1),B0EQ0),B0EQ0),B0EQ0),B0EQ0),B0EQ0),B0EQ0)
+primplement bits8_test4_8 () = BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQCONS (BEQNIL,B1EQ1),B0EQ0),B0EQ0),B0EQ0),B0EQ0),B0EQ0),B0EQ0),B0EQ0)
 
-primplement bitscons0_eq_double     {bs}{n,v} (bitseq) = BEQCONS0 (bitseq)
-primplement bitscons0_eq__cons1_inc {bs}{n,v} (bitseq) = let prval BEQCONS0 (bitseq') = bitseq in BEQCONS1 (bitseq') end
-
+primplement bitscons0_eq_double     {bs}{n,v} (bitseq) = BEQCONS (bitseq,B0EQ0)
+primplement bitscons0_eq__cons1_inc {bs}{n,v} (bitseq) = let prval BEQCONS (bitseq',B0EQ0 ()) = bitseq in BEQCONS (bitseq',B1EQ1) end
 
 prfn bits_cons_eq {b,c:bit | b == c}{bs,cs:bits | bs == cs} ()
                    :[BitsCons (b,bs) == BitsCons (c,cs)] void
@@ -72,9 +84,8 @@ prfn lor_1_assign   {b,c:bit} (lor_p:BIT_LOR (b,I,c)):[I == c] void
 prfun bitseqint__bitslen {n,v:int}{bs:bits} .<bs>.
       (bseqint:BITSEQINT (n,bs,v)):BITSLEN (bs,n)
  =case+ bseqint of
-   | BEQNIL ()           => BITSLENNIL ()
-   | BEQCONS0 (bseqint') => BITSLENCONS (bitseqint__bitslen (bseqint'))
-   | BEQCONS1 (bseqint') => BITSLENCONS (bitseqint__bitslen (bseqint'))
+   | BEQNIL ()                 => BITSLENNIL ()
+   | BEQCONS (bseqint',beqint) => BITSLENCONS (bitseqint__bitslen (bseqint'))
 
 prfun bitslor_0_nochange {n:int}{bs,cs,ds:bits} .<bs>.
       (lor_p:BITS_LOR (bs,cs,ds),eq0:BITSEQINT (n,cs,0)):[bs == ds] void
@@ -84,8 +95,8 @@ prfun bitslor_0_nochange {n:int}{bs,cs,ds:bits} .<bs>.
      in bits_eq_refl {BitsNil} () end // BitsNil = BitsNil
    | BitsCons (b,bs') => scase ds of
        | BitsCons (d,ds') => let
-           prval BITS_LOR_CONS (blor,bslor) = lor_p
-           prval BEQCONS0      (eq0')       = eq0
+           prval BITS_LOR_CONS (blor,bslor)    = lor_p
+           prval BEQCONS       (eq0',B0EQ0 ()) = eq0
            prval () = lor_0_nochange (blor)
            prval () = bitslor_0_nochange (bslor,eq0')
          in bits_cons_eq {b,d}{bs',ds'}() end
@@ -216,7 +227,7 @@ prfun bitsland_not0_nochange {n:int}{bs,cs,ds,es:bits} .<bs>.
        | BitsCons (e,es') => let
            prval BITS_LAND_CONS (b_and_d,bs'_and_ds') = bs_and_ds
            prval BITS_NOT_CONS (c_not,cs'_not)        = cs_not
-           prval BEQCONS0 (cs'_eq0)                   = cs_eq0
+           prval BEQCONS (cs'_eq0,B0EQ0 ())           = cs_eq0
            prval BIT_NOT0 ()                          = c_not
            prval ()                                   = land_1_nochange (b_and_d)
            prval ()                                   = bitsland_not0_nochange (bs'_and_ds',cs'_eq0,cs'_not)
@@ -300,11 +311,11 @@ prfun bitsland0_assign {n:int}{bs,cs,ds:bits} .<bs>.
    | BITS_LAND_NIL ()                      => bits_eq_refl {BitsNil}()
    | BITS_LAND_CONS {b,c,d}{bs',cs',ds'} (b_and_c, bs'_and_cs') =>
      case+ cs_eq_0 of
-     | BEQCONS0 (cs'_eq_0) => let
+     | BEQCONS (cs'_eq_0,B0EQ0 ()) => let
          prval () = land_0_assign (b_and_c)
          prval () = bitsland0_assign (bs'_and_cs',cs'_eq_0)
        in bits_cons_eq {O,d}{cs',ds'} () end
-     | BEQCONS1 (cs'_eq_0) =/=> ()
+     | BEQCONS (cs'_eq_0,B1EQ1 ()) =/=> ()
      | BEQNIL ()           =/=> ()
 
 prfun bitseqint_injective {n,m,v,w:int}{bs:bits} .<bs>.
@@ -318,12 +329,12 @@ prfun bitseqint_injective {n,m,v,w:int}{bs:bits} .<bs>.
    | BitsCons (b,bs') =>
      scase b of
      | O () => let
-         prval BEQCONS0 (bs'_eq_v') = bs_eq_v
-         prval BEQCONS0 (bs'_eq_w') = bs_eq_w
+         prval BEQCONS (bs'_eq_v',B0EQ0 ()) = bs_eq_v
+         prval BEQCONS (bs'_eq_w',B0EQ0 ()) = bs_eq_w
        in bitseqint_injective (bs'_eq_v',bs'_eq_w') end
      | I () => let
-         prval BEQCONS1 (bs'_eq_v') = bs_eq_v
-         prval BEQCONS1 (bs'_eq_w') = bs_eq_w
+         prval BEQCONS (bs'_eq_v',B1EQ1 ()) = bs_eq_v
+         prval BEQCONS (bs'_eq_w',B1EQ1 ()) = bs_eq_w
        in bitseqint_injective (bs'_eq_v',bs'_eq_w') end
 
 prfn bitseq_comm {bs,cs:bits | bs == cs} ():[cs == bs] void
@@ -386,7 +397,7 @@ prfun singlebit_and_bs_neq0__testbit
        prval ()      = bitslen_injective (cs'_len, cs'_len')
      in case+ ds_eq_v of
         | BEQNIL   ()          =/=> ()
-        | BEQCONS0 {ds'n}{ds''}{v'} (ds'_eq_v')   => let
+        | BEQCONS {ds'n}{b0}{ds''}{v',bitv} (ds'_eq_v',B0EQ0 ())   => let
               prval ()       = bitsland0_assign {n'}{bs',cs',ds'}(bs'_and_cs',cs'_eq_0)
               prval ()       = bitseq_comm {cs',ds'}()
             prval ds'_eq_0 = bitseq_bitseqint_assign {n',0}{cs',ds'}(cs'_eq_0)
@@ -405,7 +416,7 @@ prfun singlebit_and_bs_neq0__testbit
             prval testbits = TEST_BIT_BITS_bas {n'}{b}{bs'} (bs'_len)
           in testbits end
           //in testbits_eq_assign {n'}{O,b,O}{bs}(testbits) end
-        | BEQCONS1 {ds'n}{ds''}{v'} (ds'_eq_v')   => let
+        | BEQCONS {ds'n}{b1}{ds''}{v',bitv} (ds'_eq_v',B1EQ1 ())   => let
             prval ds'_eq_0 = bitseq_bitseqint_assign {n',0}{cs',ds'}(cs'_eq_0)
             prval ()       = bitseqint_injective {n',n',0,v'} (ds'_eq_0,ds'_eq_v')
             prval ()       = land_1_nochange {b,I} (b_and_c)
@@ -415,10 +426,10 @@ prfun singlebit_and_bs_neq0__testbit
        prval BITS_LAND_CONS {b,c,d}{bs',cs',ds'} (b_and_c,bs'_and_cs') = bs_and_cs
        prval ()                                   = singlebit_bn_lt_n (cs'_is_single)
      in case+ ds_eq_v of
-        | BEQCONS0 {ds'n}{ds'}{v'} (ds'_eq_v') => let
+        | BEQCONS {ds'n}{ds'}{v'} (ds'_eq_v',B0EQ0 ()) => let
             prval testbit' = singlebit_and_bs_neq0__testbit (bs'_and_cs',cs'_is_single,ds'_eq_v')
           in TEST_BIT_BITS_ind (testbit') end
-        | BEQCONS1 {ds'n}{ds''}{v'} (ds'_eq_v') =/=> let
+        | BEQCONS {ds'n}{ds''}{v'} (ds'_eq_v',B1EQ1 ()) =/=> let
             prval ()         = land_0_assign (b_and_c)
             prval ()         = bit_eq_comm {O,d} ()
             prval EQBIT ()   = eqbit_make {d,O} ()

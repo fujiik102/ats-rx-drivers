@@ -8,25 +8,8 @@ prfn {n:int} le_plus_1 ():[n <= n + 1] void = ()
 prfn {n:int} le_refl   ():[n <= n]     void = ()
 prfn {n:int} plus_0    ():[n == n + 0] void = ()
 
-prfn {b:bit}{v:int} beqint_nat2 (beqint:BITEQINT (b,v)):[0 <= v][v <= 1] void
- = case+ beqint of
-   | B0EQ0 () => ()
-   | B1EQ1 () => ()
 
-extern praxi {b:bit} beq0__b_is_O (beqint:BITEQINT (b,0)):[O == b] void
 
-(*prfn {b:bit} beq0__b_is_O (beqint:BITEQINT (b,0)):[O == b] void
- = case+ beqint of
-   | B0EQ0 () =>   ()
-   | B1EQ1 () =/=> ()
-*)
-extern praxi {b:bit} beq1__b_is_I (beqint:BITEQINT (b,1)):[I == b] void
-(*
-prfn {b:bit} beq1__b_is_I (beqint:BITEQINT (b,1)):[I == b] void
- = case+ beqint of
-   | B0EQ0 () =/=> ()
-   | B1EQ1 () =>   ()
-*)
 prfun le_plus_nat {n,m:int | n <= m}{p:nat} .<p>. ():[n <= m+p] void =
   sif 0 < p then let
       prval () = le_plus_nat {n,m}{p-1} ()
@@ -122,8 +105,8 @@ let
   prfun aux {n,v:int}{bs:bits} .<bs>. (beqint:BITSEQINT (n,bs,v)):[0 <= v] void =
     case+ beqint of
     | BEQNIL   ()       => le_refl ()   // 0 <= 0
-    | BEQCONS0 (beqind) => aux (beqind) // (0 <= n) -> (0 <= n+0)
-    | BEQCONS1 (beqind) => aux (beqind) // (0 <= n) -> (0 <= n+1)
+    | BEQCONS (beqind,B0EQ0 ()) => aux (beqind) // (0 <= n) -> (0 <= n+0)
+    | BEQCONS (beqind,B1EQ1 ()) => aux (beqind) // (0 <= n) -> (0 <= n+1)
 in aux (beqint_fst) end
 
 dataprop NAT_EVEN (int) =
@@ -187,13 +170,13 @@ prfun nat_eq_bits {n,npow,v:nat | v < npow}{v <= INTMAX} .<n>.
        | NATeven (ev) => let
            prval [h:int](_) = nat_half {v} (ev)
            prval () = double_v_lt_2pow_succ__v_lt_2pow {h,n',npow,npow'} (pow2ind,pow2) // h < npow'
-         in BEQCONS0 (nat_eq_bits {n',npow',h} (pow2ind)) end
+         in BEQCONS (nat_eq_bits {n',npow',h} (pow2ind),B0EQ0) end
        | NATodd  (odd) => let
            prval (ev) = nodd_prev_is_even (odd)
            prval () = nodd_gte_1 (odd)
            prval [h:int](_) = nat_half {v-1} (ev)
            prval () = double_v_lt_2pow_succ__v_lt_2pow {h,n',npow,npow'} (pow2ind,pow2) // h < npow'
-         in BEQCONS1 (nat_eq_bits {n',npow',h} (pow2ind)) end
+         in BEQCONS (nat_eq_bits {n',npow',h} (pow2ind),B1EQ1) end
     end
   else let
       prval () = pow2_injective (pow2, POW2_0 ())
