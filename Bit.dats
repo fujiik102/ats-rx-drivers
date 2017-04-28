@@ -26,6 +26,17 @@ staload "Bit.sats"
 implement main0 () = () // a dummy implementation for [main]
 
 
+prfn {n:int} le_refl   ():[n <= n]     void = ()
+
+primplement beqint_is_nat {n,v}{bs} (beqint_fst)
+ = let
+     prfun aux {n,v:int}{bs:bits} .<bs>. (beqint:BITSEQINT (n,bs,v)):[0 <= v] void =
+       case+ beqint of
+       | BEQNIL   ()       => le_refl ()   // 0 <= 0
+       | BEQCONS (beqind,B0EQ0 ()) => aux (beqind) // (0 <= n) -> (0 <= n+0)
+       | BEQCONS (beqind,B1EQ1 ()) => aux (beqind) // (0 <= n) -> (0 <= n+1)
+   in aux (beqint_fst) end
+
 prfn {b:bit}{v:int} beqint_nat2 (beqint:BITEQINT (b,v)):[0 <= v][v <= 1] void
  = case+ beqint of
    | B0EQ0 () => ()
@@ -123,6 +134,11 @@ prfun bitslen_injective {n,m:int}{bs:bits} .<bs>.
        prval BITSLENCONS (len_n') = len_n
        prval BITSLENCONS (len_m') = len_m
      in bitslen_injective (len_n',len_m') end
+
+prfn {bs,cs:bits}{n,bn:int} chgbit_bit_eq {b,c:bit | b == c}
+       (bs_chg_b_at_bn:CHANGE_BIT_BITS (n,bs,bn,b,cs)):
+        CHANGE_BIT_BITS (n,bs,bn,c,cs)
+ = let prval EQBIT () = eqbit_make {b,c}() in bs_chg_b_at_bn end
 
 prfn change_bit_bits_eq {n,bn:int}{b,c:bit | b == c}{bs,cs,ds,es:bits | bs == ds; cs == es}
                         (chbits:CHANGE_BIT_BITS (n,bs,bn,b,cs)): CHANGE_BIT_BITS (n,ds,bn,c,es)
@@ -436,7 +452,7 @@ prfn breqperm_0 {bs:bits}(
         Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit),
       bs))
     : [bs == Bits8 (O,O,O,O,O,O,O,O)] void
-*) 
+*)
 primplement breqperm_0 {bs}(perms)
  = let
      prval BITPERMCERTS_CONS (BITPERMCERT_0 (), BITPERMCERTS_CONS (BITPERMCERT_0 (),
@@ -578,20 +594,5 @@ primplement breqperms_prohibit {any_prop}{n}{bs}{ps,qs',rs}(ps_qs_add,perms)
    | BIT_PERMS_ADD_CONS {p}{ps',qs,rs'}(ps'_qs_add) => let
        prval BITPERMCERTS_CONS {n'}{r2}{rs'2}{b}{bs'} (perm, perms') = perms
      in breqperms_prohibit {any_prop}{n'}{bs'}{ps',qs',rs'}(ps'_qs_add,perms') end
-(*
-prfn {v:int} beqint_bit_eq {b,c:bit | b == c} (BITEQINT (b,v)):BITEQINT (c,v)
-*)
-primplement {v} beqint_bit_eq {b,c} (b_eq_v)
- = let prval EQBIT () = eqbit_make {b,c}() in b_eq_v end
 
-(*
-prfn {bs,cs:bits}{n,bn:int} chgbit_bit_eq {b,c:bit | b == c}
-       (CHANGE_BIT_BITS (n,bs,bn,b,cs)):
-        CHANGE_BIT_BITS (n,bs,bn,c,cs)
-*)
-primplement {bs,cs}{n,bn} chgbit_bit_eq {b,c}(bs_chg_b_at_bn)
- = let prval EQBIT () = eqbit_make {b,c}() in bs_chg_b_at_bn end
-
-
-
-
+  
