@@ -446,14 +446,14 @@ implement {bs} testBitBits {n,bn} (v,bn)
 
 
 (*
-prfn breqperm_0 {bs:bits}(
-    BIT_PERMIT_CERTIFICATES (8,BitPermissions8 (
+prfn bitspermcert_0 {bs:bits}(
+    BITS_PERMIT_CERTIFICATE (8,BitPermissions8 (
         Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit,
         Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit),
       bs))
     : [bs == Bits8 (O,O,O,O,O,O,O,O)] void
 *)
-primplement breqperm_0 {bs}(perms)
+primplement bitspermcert_0 {bs}(perms)
  = let
      prval BITPERMCERTS_CONS (BITPERMCERT_0 (), BITPERMCERTS_CONS (BITPERMCERT_0 (),
            BITPERMCERTS_CONS (BITPERMCERT_0 (), BITPERMCERTS_CONS (BITPERMCERT_0 (),
@@ -463,14 +463,14 @@ primplement breqperm_0 {bs}(perms)
    in bits_eq_refl {bs}() end
 
 (*
-prfn breqperm_1 {bs:bits}(
-    BIT_PERMIT_CERTIFICATES (8,BitPermissions8 (
+prfn bitspermcert_1 {bs:bits}(
+    BITS_PERMIT_CERTIFICATE (8,BitPermissions8 (
         Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit,
         Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Prohibit,Permit),
       bs))
     : [bs == Bits8 (O,O,O,O,O,O,O,I)] void
 *)
-primplement breqperm_1 {bs}(perms)
+primplement bitspermcert_1 {bs}(perms)
  = let
      prval BITPERMCERTS_CONS (BITPERMCERT_1 (), BITPERMCERTS_CONS (BITPERMCERT_0 (),
            BITPERMCERTS_CONS (BITPERMCERT_0 (), BITPERMCERTS_CONS (BITPERMCERT_0 (),
@@ -480,14 +480,14 @@ primplement breqperm_1 {bs}(perms)
    in bits_eq_refl {bs}() end
 
 (*
-prfn breqperm_2 {bs:bits}(
-    BIT_PERMIT_CERTIFICATES (8,BitPermissions8 (
+prfn bitspermcert_2 {bs:bits}(
+    BITS_PERMIT_CERTIFICATE (8,BitPermissions8 (
         Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit,
         Permit,Prohibit, Permit,Prohibit, Prohibit,Permit, Permit,Prohibit),
       bs))
     : [bs == Bits8 (O,O,O,O,O,O,I,O)] void
 *)
-primplement breqperm_2 {bs}(perms)
+primplement bitspermcert_2 {bs}(perms)
  = let
      prval BITPERMCERTS_CONS (BITPERMCERT_0 (), BITPERMCERTS_CONS (BITPERMCERT_1 (),
            BITPERMCERTS_CONS (BITPERMCERT_0 (), BITPERMCERTS_CONS (BITPERMCERT_0 (),
@@ -497,14 +497,14 @@ primplement breqperm_2 {bs}(perms)
    in bits_eq_refl {bs}() end
 
 (*
-prfn breqperm_128 {bs:bits}(
-    BIT_PERMIT_CERTIFICATES (8,BitPermissions8 (
+prfn bitspermcert_128 {bs:bits}(
+    BITS_PERMIT_CERTIFICATE (8,BitPermissions8 (
         Prohibit,Permit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit,
         Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit),
       bs))
     : [bs == Bits8 (I,O,O,O,O,O,O,O)] void
 *)
-primplement breqperm_128 {bs}(perms)
+primplement bitspermcert_128 {bs}(perms)
  = let
      prval BITPERMCERTS_CONS (BITPERMCERT_0 (), BITPERMCERTS_CONS (BITPERMCERT_0 (),
            BITPERMCERTS_CONS (BITPERMCERT_0 (), BITPERMCERTS_CONS (BITPERMCERT_0 (),
@@ -514,14 +514,14 @@ primplement breqperm_128 {bs}(perms)
    in bits_eq_refl {bs}() end
 
 (*
-prfn breqperm_255 {bs:bits}(
-    BIT_PERMIT_CERTIFICATES (8,BitPermissions8 (
+prfn bitspermcert_255 {bs:bits}(
+    BITS_PERMIT_CERTIFICATE (8,BitPermissions8 (
         Prohibit,Permit, Prohibit,Permit, Prohibit,Permit, Prohibit,Permit, 
         Prohibit,Permit, Prohibit,Permit, Prohibit,Permit, Prohibit,Permit),
       bs))
     : [bs == Bits8 (I,I,I,I,I,I,I,I)] void
 *)
-primplement breqperm_255 {bs}(perms)
+primplement bitspermcert_255 {bs}(perms)
  = let
      prval BITPERMCERTS_CONS (BITPERMCERT_1 (), BITPERMCERTS_CONS (BITPERMCERT_1 (),
            BITPERMCERTS_CONS (BITPERMCERT_1 (), BITPERMCERTS_CONS (BITPERMCERT_1 (),
@@ -531,8 +531,8 @@ primplement breqperm_255 {bs}(perms)
    in bits_eq_refl {bs}() end
 
 (*
-prfn breqperm_all {bs:bits}(BITSLEN (bs,8)):
-    BIT_PERMIT_CERTIFICATES (8,BitPermissions8 (
+prfn bitspermcert_all {bs:bits}(BITSLEN (bs,8)):
+    BITS_PERMIT_CERTIFICATE (8,BitPermissions8 (
         Permit,Permit, Permit,Permit, Permit,Permit, Permit,Permit,
         Permit,Permit, Permit,Permit, Permit,Permit, Permit,Permit),
       bs)
@@ -549,7 +549,7 @@ prfun bitslen0__nil {bs:bits}.<bs>.(bslen:BITSLEN (bs,0)): [bs == BitsNil] void
    | BITSLENNIL ()        =>   bits_eq_refl {bs}()
    | BITSLENCONS (bs'len) =/=> bitslen_nat (bs'len)
 
-primplement breqperm_all {bs8}(bs8len)
+primplement bitspermcert_all {bs8}(bs8len)
  = let
      prval BITSLENCONS {n7}{b8}{bs7}(bs7len) = bs8len
      prval BITSLENCONS {n6}{b7}{bs6}(bs6len) = bs7len
@@ -568,13 +568,13 @@ primplement breqperm_all {bs8}(bs8len)
       BITPERMCERTS_NIL ())))))))) end
 
 (*
-prfn breqperm_inhaditat {any_prop:prop}{n:int}{bs:bits}{ps:bit_permissions}
-    (BIT_PERMIT_CERTIFICATES (n,
+prfn bitspermcert_inhaditat {any_prop:prop}{n:int}{bs:bits}{ps:bit_permissions}
+    (BITS_PERMIT_CERTIFICATE (n,
        BitPermsCons(BitPermission (Prohibit,Prohibit), ps),
        bs)): any_prop
 *)
 
-primplement breqperm_inhaditat {any_prop}{n}{bs}{ps}(perms)
+primplement bitspermcert_inhaditat {any_prop}{n}{bs}{ps}(perms)
  = let
      prval BITPERMCERTS_CONS (perm, perms') = perms
    in case+ perm of
@@ -583,16 +583,16 @@ primplement breqperm_inhaditat {any_prop}{n}{bs}{ps}(perms)
    end
 
 (*
-prfun breqperms_prohibit {any_prop:prop}{n:int}{bs:bits}{ps,qs,rs:bit_permissions}
+prfun bitspermcerts_prohibit {any_prop:prop}{n:int}{bs:bits}{ps,qs,rs:bit_permissions}
     (BIT_PERMS_ADD (ps,BitPermsCons (BitPermission (Prohibit,Prohibit),qs),rs),
-     BIT_PERMIT_CERTIFICATES (n,rs,bs))
+     BITS_PERMIT_CERTIFICATE (n,rs,bs))
     : any_prop
 *)
-primplement breqperms_prohibit {any_prop}{n}{bs}{ps,qs',rs}(ps_qs_add,perms)
+primplement bitspermcerts_prohibit {any_prop}{n}{bs}{ps,qs',rs}(ps_qs_add,perms)
  = case+ ps_qs_add of
-   | BIT_PERMS_ADD_NIL () => breqperm_inhaditat (perms)
+   | BIT_PERMS_ADD_NIL () => bitspermcert_inhaditat (perms)
    | BIT_PERMS_ADD_CONS {p}{ps',qs,rs'}(ps'_qs_add) => let
        prval BITPERMCERTS_CONS {n'}{r2}{rs'2}{b}{bs'} (perm, perms') = perms
-     in breqperms_prohibit {any_prop}{n'}{bs'}{ps',qs',rs'}(ps'_qs_add,perms') end
+     in bitspermcerts_prohibit {any_prop}{n'}{bs'}{ps',qs',rs'}(ps'_qs_add,perms') end
 
   
