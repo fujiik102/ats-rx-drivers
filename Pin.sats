@@ -45,18 +45,18 @@ dataview PMR_V (IOPort,bits) =
       PMR_BIT_V (Pin (p,6), b6), PMR_BIT_V (Pin (p,7), b7))
 
 fn {bs,cs:bits}{p:IOPort}
-  writePMR (PMR_V (p,bs) | ioport_t p, bits_int_t (8,cs))
+  writePMR (PMR_V (p,bs) | ioport_t p, bits_uint_t (8,cs))
    :(PMR_V (p,cs) | void)
 
 fn {bs,cs:bits}{p:IOPort}{b:bit}
   changePMRBit {bn:int | bn < 8}
-    (CHANGE_BIT_BITS (bs,bn,b,cs),
+    (CHANGE_BIT_BITS (8,bs,bn,b,cs),
      !PMR_V (p,bs) >> PMR_V (p,cs)
-    | pin_t (p,bn), bit_int_t b):void
+    | pin_t (p,bn), bit_uint_t b):void
 
 fn {bs:bits}{p:IOPort}
   readPMR (!PMR_V (p,bs) | p:ioport_t p)
-   :bits_int_t (8,bs)
+   :bits_uint_t (8,bs)
 
 // PFS関数は延期。PFS_Vのみ定義して、初期値の状態のみ取得できるようにする。
 (*
@@ -126,16 +126,16 @@ absprop PDR_PERMISSION (IOPort,bit_permissions)
 dataprop PDR_PERMIT (IOPort,bits) =
  | {p:IOPort}{perms:bit_permissions}{bs:bits}{v:int}
    PDR_PERMIT (p,bs)
-    of (PDR_PERMISSION (p,perms),BIT_REQUIRE_PERMSSIONS (8,perms,bs))
+    of (PDR_PERMISSION (p,perms),BITS_PERMIT_CERTIFICATE (8,perms,bs))
 
 fn {p:IOPort}{bs,cs:bits}{v: int}
   writePDR (PDR_PERMIT (p,cs),
             !PDR_V (p,bs) >> PDR_V (p,cs) |
-            ioport_t p,bits_int_t (8,cs)):void
+            ioport_t p,bits_uint_t (8,cs)):void
 
 fn {p:IOPort}{bs:bits}
   readPDR (!PDR_V (p,bs) | ioport_t p)
-   : bits_int_t (8,bs)
+   : bits_uint_t (8,bs)
 
 
 // PODR
@@ -157,33 +157,67 @@ absprop PODR_PERMISSION (IOPort,bit_permissions)
 dataprop PODR_PERMIT (IOPort,bits) =
  | {p:IOPort}{perms:bit_permissions}{bs:bits}{v:int}
    PODR_PERMIT (p,bs)
-    of (PODR_PERMISSION (p,perms),BIT_REQUIRE_PERMSSIONS (8,perms,bs))
+    of (PODR_PERMISSION (p,perms),BITS_PERMIT_CERTIFICATE (8,perms,bs))
 
 fn {p:IOPort}{bs,cs:bits}
   writePODR (PODR_PERMIT (p,cs),
              !PODR_V (p,bs) >> PODR_V (p,cs) |
-             ioport_t p, bits_int_t (8,cs)):void
+             ioport_t p, bits_uint_t (8,cs)):void
 
 fn {p:IOPort}{bs:bits}
   readPODR (PODR_V (p,bs) | ioport_t p)
-   :bits_int_t (8,bs)
-
-////
+   :bits_uint_t (8,bs)
 
 // GPIO
 
-viewdef GPIOView (p:Pin)(writable:bit)(out:bit) =
+viewdef GPIOView (p:Pin,writable:bit,out:bit) =
   (PMR_BIT_V (p, O), PDR_BIT_V (p, writable), PODR_BIT_V (p, out))
 
+stadef P0 (n:int):Pin = Pin (Port0,n)
+stadef P1 (n:int):Pin = Pin (Port1,n)
+stadef P2 (n:int):Pin = Pin (Port2,n)
+stadef P3 (n:int):Pin = Pin (Port3,n)
+stadef P4 (n:int):Pin = Pin (Port4,n)
+stadef P5 (n:int):Pin = Pin (Port5,n)
+stadef P6 (n:int):Pin = Pin (Port6,n)
+stadef P7 (n:int):Pin = Pin (Port7,n)
+stadef P8 (n:int):Pin = Pin (Port8,n)
+stadef P9 (n:int):Pin = Pin (Port9,n)
+stadef PA (n:int):Pin = Pin (PortA,n)
+stadef PB (n:int):Pin = Pin (PortB,n)
+stadef PC (n:int):Pin = Pin (PortC,n)
+stadef PD (n:int):Pin = Pin (PortD,n)
+stadef PE (n:int):Pin = Pin (PortE,n)
+stadef PF (n:int):Pin = Pin (PortF,n)
+stadef PG (n:int):Pin = Pin (PortG,n)
+stadef PH (n:int):Pin = Pin (PortH,n)
+stadef PI (n:int):Pin = Pin (PortI,n)
+stadef PJ (n:int):Pin = Pin (PortJ,n)
+
 // TODO 出力電圧やオープンドレインなどの設定を表す観を作る。
+// TODO linタグを復活させる。
+(*
+fn getInitialPinViews () : //<lin>
+    (GPIOView (P0 0,O,I),
+     GPIOView (P0 1,I,O),
+     GPIOView (P1 0,O,O),
+     GPIOView (P1 1,I,I)
+     | void)
+*)
 
-fn getInitialPinViews (IOPortNotGetInitialView) :
-    (GPIOView (Port0, 0) false false, GPIOView (Port0, 1),
-     GPIOView (Port1, 0) false false, GPIOView (Port1, 1) | void)
+fn {p:IOPort}{n:int}{rw,outv,before_rw:bit} configIOPin
+   (!GPIOView (Pin (p,n),before_rw,outv) >> GPIOView (Pin (p,n),rw,outv)
+   | pin:pin_t (p,n), rw:bit_uint_t rw)
+   : void
 
-fn configIOPin {pin:Pin}{rw,outv,bef_rw:bool} (pin:pin_t, rw:bool | GPIOView (id,bef_rw,outv)): (GPIOView (id,rw,outv) | void)
-fn putIO {outv:bool}{bef_out:bit} (GPIOView (id,true,out) | id:Pin, bool outv): (GPIOView (id,true,outv) | void)
-fn readIO {rw,outv,actualv:bool} (GPIOView (ud,rw,outv) | id:Pin): (GPIOView (id,rw,outv) | bool)
+fn {p:IOPort}{n:int}{outv,before_out:bit} putIO
+   (!GPIOView (Pin (p,n),I,before_out) >> GPIOView (Pin (p,n),I,outv)
+   | pin:pin_t (p,n), bit_uint_t outv)
+   : void
+
+fn {p:IOPort}{n:int}{rw,outv:bit} readIO
+   (!GPIOView (Pin (p,n),rw,outv) | pin:pin_t (p,n))
+   : bit_uint_t outv
 
 (*
  起動からの出力履歴を型に含ませる。
@@ -208,5 +242,4 @@ fn rx110_64pins_initial_views ():<lin> (
 //
 // 実装
 //
-
 

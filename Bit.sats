@@ -29,6 +29,9 @@ dataprop BITSEQINT (int, bits, int) =
    BEQCONS (n+1,BitsCons (b, bs),v+v+bitv)
    of (BITSEQINT (n,bs,v),BITEQINT (b,bitv))
 
+typedef bits_uint_t (n:int,bs:bits) =
+  [v:int] (BITSEQINT (n,bs,v) | uint v)
+
 stadef Bits8 (b7,b6,b5,b4,b3,b2,b1,b0:bit): bits =
   BitsCons (b0, BitsCons (b1, BitsCons (b2, BitsCons (b3,
   BitsCons (b4, BitsCons (b5, BitsCons (b6, BitsCons (b7,
@@ -51,9 +54,6 @@ prfn bitscons0_eq_double {bs:bits}{n,v:int | v <= INTMAX_HALF}
 prfn bitscons0_eq__cons1_inc {bs:bits}{n,v:int}
   (BITSEQINT (n,BitsCons (O,bs),v)) : BITSEQINT (n,BitsCons (I,bs),v+1)
 
-typedef bits_uint_t (n:int,bs:bits) =
-  [v:int] (BITSEQINT (n,bs,v) | uint v)
-
 dataprop EQBIT (bit, bit) = {b:bit} EQBIT (b, b)
 praxi eqbit_make {b,c:bit | b == c} (): EQBIT (b,c)
 praxi bit_eq_refl {b:bit} ():[b == b] void
@@ -75,17 +75,36 @@ prfn beqint_is_nat {n,v:int}{bs:bits}
 
 dataprop CHANGE_BIT_BITS (int,bits,int,bit,bits) =
  | {n:int}{b,c:bit}{bs:bits} CHANGE_BIT_BITS_bas
-     (n+1,BitsCons (b,bs),n,c,BitsCons (c,bs)) of (BITSLEN (bs,n))
+     (n+1,BitsCons (b,bs),0,c,BitsCons (c,bs)) of (BITSLEN (bs,n))
  | {n,bn:int}{b,c:bit}{bs,cs:bits}
-   CHANGE_BIT_BITS_ind(n+1,BitsCons (c,bs),bn,b,BitsCons (c,cs))
+   CHANGE_BIT_BITS_ind(n+1,BitsCons (c,bs),bn+1,b,BitsCons (c,cs))
     of CHANGE_BIT_BITS (n,bs,bn,b,cs)
 
-dataprop TEST_BIT_BITS (bits,int,bool) =
- | {bn:int}{b:bit}{bs:bits} TEST_BIT_BITS_bas (BitsCons (b,bs),bn,b == I)
-     of (BITSLEN (bs,bn))
- | {test:bool}{b:bit}{bs:bits}{bn:int}
-   TEST_BIT_BITS_ind (BitsCons (b,bs),bn,test) of TEST_BIT_BITS (bs,bn,test)
+prfun chgbit_test1 (): CHANGE_BIT_BITS (1,BitsCons (I,BitsNil),0,O
+                                         ,BitsCons (O,BitsNil))
+prfun chgbit_test2 (): CHANGE_BIT_BITS (8,Bits8 (I,I,I,I,I,I,I,I),7,O
+                                         ,Bits8 (O,I,I,I,I,I,I,I))
+prfun chgbit_test3 (): CHANGE_BIT_BITS (8,Bits8 (I,I,I,I,I,I,I,I),0,O
+                                         ,Bits8 (I,I,I,I,I,I,I,O))
+prfun chgbit_test4 {bs,cs:bits}(BITSEQINT (8,bs,0),BITSEQINT (8,cs,1)):
+                   CHANGE_BIT_BITS (8,bs,0,I,cs)
+prfun chgbit_test5 {bs,cs:bits}(BITSEQINT (8,bs,0),BITSEQINT (8,cs,128)):
+                   CHANGE_BIT_BITS (8,bs,7,I,cs)
 
+dataprop TEST_BIT_BITS (bits,int,bit) =
+ | {bn:int}{b:bit}{bs:bits} TEST_BIT_BITS_bas (BitsCons (b,bs),0,b)
+     of (BITSLEN (bs,bn))
+ | {b,c:bit}{bs:bits}{bn:int}
+   TEST_BIT_BITS_ind (BitsCons (c,bs),bn+1,b) of TEST_BIT_BITS (bs,bn,b)
+
+prfun tstbit_test1 (): TEST_BIT_BITS (BitsCons (I,BitsNil),0,I)
+prfun tstbit_test2 (): TEST_BIT_BITS (BitsCons (O,BitsNil),0,O)
+prfun tstbit_test3 (): TEST_BIT_BITS (Bits8 (I,I,I,I,I,I,I,O),0,O)
+prfun tstbit_test4 (): TEST_BIT_BITS (Bits8 (I,O,O,O,O,O,O,O),7,I)
+prfun tstbit_test5 (): TEST_BIT_BITS (Bits8 (I,O,I,O,I,O,I,O),3,I)
+prfun tstbit_test6 (): TEST_BIT_BITS (Bits8 (I,O,I,O,I,O,I,O),4,O)
+prfun tstbit_test7 {bs:bits}(BITSEQINT (8,bs,1)):TEST_BIT_BITS (bs,0,I)
+prfun tstbit_test8 {bs:bits}(BITSEQINT (8,bs,127)):TEST_BIT_BITS (bs,7,O)
 
 
 fn {b:bit}{bs:bits}
@@ -102,7 +121,7 @@ fn {bs:bits}
 
 fn {bs:bits}
   testBitBits {n,bn:nat | bn < n}{n < INTBITS} (bits_uint_t (n,bs),uint bn)
-  : [b:bool] (TEST_BIT_BITS (bs,bn,b) | bool b)
+  : [b:bit] (TEST_BIT_BITS (bs,bn,b) | bool (b==I))
 
 dataprop BIT_LOR (bit,bit,bit) =
  | BIT_LOR_II (I,I,I) of ()
@@ -137,10 +156,19 @@ fn {n:int}{bs,cs:bits} bits_uint_land (n:bits_uint_t (n,bs),m:bits_uint_t (n,cs)
 
 
 dataprop SINGLE_BIT_BITS (int,int,bits) =
- | {n:int}{bs:bits}    SINGLE_BIT_BITS_bas (n+1,n, BitsCons (I,bs))
+ | {n:int}{bs:bits}    SINGLE_BIT_BITS_bas (n+1,0, BitsCons (I,bs))
                                         of (BITSEQINT (n,bs,0))
- | {n,bn:int}{bs:bits} SINGLE_BIT_BITS_ind (n+1,bn,BitsCons (O,bs))
+ | {n,bn:int}{bs:bits} SINGLE_BIT_BITS_ind (n+1,bn+1,BitsCons (O,bs))
                                         of (SINGLE_BIT_BITS (n,bn,bs))
+
+prfun singlebit_test1 (): SINGLE_BIT_BITS (1,0,BitsCons (I,BitsNil))
+prfun singlebit_test2 (): SINGLE_BIT_BITS (2,1,BitsCons (O,BitsCons (I,BitsNil)))
+prfun singlebit_test3 (): SINGLE_BIT_BITS (8,0,Bits8 (O,O,O,O,O,O,O,I))
+prfun singlebit_test4 (): SINGLE_BIT_BITS (8,7,Bits8 (I,O,O,O,O,O,O,O))
+prfun singlebit_test5 {bs:bits}(BITSEQINT (8,bs,1)):SINGLE_BIT_BITS (8,0,bs)
+prfun singlebit_test6 {bs:bits}(BITSEQINT (8,bs,128)):SINGLE_BIT_BITS (8,7,bs)
+prfun singlebit_test7 {bs:bits}(SINGLE_BIT_BITS (8,0,bs)):BITSEQINT (8,bs,1)
+prfun singlebit_test8 {bs:bits}(SINGLE_BIT_BITS (8,7,bs)):BITSEQINT (8,bs,128)
 
 // 1 << bn
 fn {n,bn:int} make_single_bit (bn:uint bn):
