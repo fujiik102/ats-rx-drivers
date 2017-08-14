@@ -8,12 +8,12 @@
 
 datasort bit = | O | I
 
-datasort bits = BitsNil of () | BitsCons of (bit, bits)
+datasort bits = BitsNil of () | BitsCons of (bits,bit)
 
 dataprop BITSLEN (bits,int) =
  | BITSLENNIL (BitsNil,0) of ()
  | {n:int}{b:bit}{bs:bits}
-   BITSLENCONS (BitsCons (b,bs),n+1) of BITSLEN (bs,n)
+   BITSLENCONS (BitsCons (bs,b),n+1) of BITSLEN (bs,n)
 
 praxi bitslen_nat {n:int}{bs:bits} (BITSLEN (bs,n)):[0 <= n] void
 
@@ -26,16 +26,16 @@ typedef bit_uint_t (b:bit) = [v:int] (BITEQINT (b,v) | uint v)
 dataprop BITSEQINT (int, bits, int) =
  | BEQNIL (0,BitsNil,0) of ()
  | {n:int}{b:bit}{bs:bits}{v,bitv:int | v <= INTMAX_HALF}
-   BEQCONS (n+1,BitsCons (b, bs),v+v+bitv)
+   BEQCONS (n+1,BitsCons (bs,b),v+v+bitv)
    of (BITSEQINT (n,bs,v),BITEQINT (b,bitv))
 
 typedef bits_uint_t (n:int,bs:bits) =
   [v:int] (BITSEQINT (n,bs,v) | uint v)
 
 stadef Bits8 (b7,b6,b5,b4,b3,b2,b1,b0:bit): bits =
-  BitsCons (b0, BitsCons (b1, BitsCons (b2, BitsCons (b3,
-  BitsCons (b4, BitsCons (b5, BitsCons (b6, BitsCons (b7,
-  BitsNil))))))))
+  BitsCons (BitsCons (BitsCons (BitsCons (
+  BitsCons (BitsCons (BitsCons (BitsCons (
+  BitsNil,b7),b6),b5),b4),b3),b2),b1),b0)
 
 prfn bits_test1    () : BITSEQINT (0,BitsNil (),0)
 prfn bits8_test2   () : BITSEQINT (8,Bits8 (O,O,O,O,O,O,O,O),   0)
@@ -50,9 +50,9 @@ prfn bits8_test4_7 () : BITSEQINT (8,Bits8 (O,I,O,O,O,O,O,O),  64)
 prfn bits8_test4_8 () : BITSEQINT (8,Bits8 (I,O,O,O,O,O,O,O), 128)
 
 prfn bitscons0_eq_double {bs:bits}{n,v:int | v <= INTMAX_HALF}
-  (BITSEQINT (n,bs,v)) : BITSEQINT (n+1,BitsCons (O,bs),v+v)
+  (BITSEQINT (n,bs,v)) : BITSEQINT (n+1,BitsCons (bs,O),v+v)
 prfn bitscons0_eq__cons1_inc {bs:bits}{n,v:int}
-  (BITSEQINT (n,BitsCons (O,bs),v)) : BITSEQINT (n,BitsCons (I,bs),v+1)
+  (BITSEQINT (n,BitsCons (bs,O),v)) : BITSEQINT (n,BitsCons (bs,I),v+1)
 
 dataprop EQBIT (bit, bit) = {b:bit} EQBIT (b, b)
 praxi eqbit_make {b,c:bit | b == c} (): EQBIT (b,c)
@@ -75,13 +75,13 @@ prfn beqint_is_nat {n,v:int}{bs:bits}
 
 dataprop CHANGE_BIT_BITS (int,bits,int,bit,bits) =
  | {n:int}{b,c:bit}{bs:bits} CHANGE_BIT_BITS_bas
-     (n+1,BitsCons (b,bs),0,c,BitsCons (c,bs)) of (BITSLEN (bs,n))
+     (n+1,BitsCons (bs,b),0,c,BitsCons (bs,c)) of (BITSLEN (bs,n))
  | {n,bn:int}{b,c:bit}{bs,cs:bits}
-   CHANGE_BIT_BITS_ind(n+1,BitsCons (c,bs),bn+1,b,BitsCons (c,cs))
+   CHANGE_BIT_BITS_ind(n+1,BitsCons (bs,c),bn+1,b,BitsCons (cs,c))
     of CHANGE_BIT_BITS (n,bs,bn,b,cs)
 
-prfun chgbit_test1 (): CHANGE_BIT_BITS (1,BitsCons (I,BitsNil),0,O
-                                         ,BitsCons (O,BitsNil))
+prfun chgbit_test1 (): CHANGE_BIT_BITS (1,BitsCons (BitsNil,I),0,O
+                                         ,BitsCons (BitsNil,O))
 prfun chgbit_test2 (): CHANGE_BIT_BITS (8,Bits8 (I,I,I,I,I,I,I,I),7,O
                                          ,Bits8 (O,I,I,I,I,I,I,I))
 prfun chgbit_test3 (): CHANGE_BIT_BITS (8,Bits8 (I,I,I,I,I,I,I,I),0,O
@@ -92,13 +92,13 @@ prfun chgbit_test5 {bs,cs:bits}(BITSEQINT (8,bs,0),BITSEQINT (8,cs,128)):
                    CHANGE_BIT_BITS (8,bs,7,I,cs)
 
 dataprop TEST_BIT_BITS (bits,int,bit) =
- | {bn:int}{b:bit}{bs:bits} TEST_BIT_BITS_bas (BitsCons (b,bs),0,b)
+ | {bn:int}{b:bit}{bs:bits} TEST_BIT_BITS_bas (BitsCons (bs,b),0,b)
      of (BITSLEN (bs,bn))
  | {b,c:bit}{bs:bits}{bn:int}
-   TEST_BIT_BITS_ind (BitsCons (c,bs),bn+1,b) of TEST_BIT_BITS (bs,bn,b)
+   TEST_BIT_BITS_ind (BitsCons (bs,c),bn+1,b) of TEST_BIT_BITS (bs,bn,b)
 
-prfun tstbit_test1 (): TEST_BIT_BITS (BitsCons (I,BitsNil),0,I)
-prfun tstbit_test2 (): TEST_BIT_BITS (BitsCons (O,BitsNil),0,O)
+prfun tstbit_test1 (): TEST_BIT_BITS (BitsCons (BitsNil,I),0,I)
+prfun tstbit_test2 (): TEST_BIT_BITS (BitsCons (BitsNil,O),0,O)
 prfun tstbit_test3 (): TEST_BIT_BITS (Bits8 (I,I,I,I,I,I,I,O),0,O)
 prfun tstbit_test4 (): TEST_BIT_BITS (Bits8 (I,O,O,O,O,O,O,O),7,I)
 prfun tstbit_test5 (): TEST_BIT_BITS (Bits8 (I,O,I,O,I,O,I,O),3,I)
@@ -132,7 +132,7 @@ dataprop BIT_LOR (bit,bit,bit) =
 dataprop BITS_LOR (bits,bits,bits) =
  | BITS_LOR_NIL  (BitsNil,BitsNil,BitsNil) of ()
  | {b,c,d:bit}{bs,cs,ds:bits}
-   BITS_LOR_CONS (BitsCons (b,bs),BitsCons (c,cs),BitsCons (d,ds))
+   BITS_LOR_CONS (BitsCons (bs,b),BitsCons (cs,c),BitsCons (ds,d))
     of (BIT_LOR (b,c,d), BITS_LOR (bs,cs,ds))
 
 fn {n:int}{bs,cs:bits} bits_uint_lor (n:bits_uint_t (n,bs),m:bits_uint_t (n,cs)):
@@ -148,7 +148,7 @@ dataprop BIT_LAND (bit,bit,bit) =
 dataprop BITS_LAND (bits,bits,bits) =
  | BITS_LAND_NIL  (BitsNil,BitsNil,BitsNil) of ()
  | {b,c,d:bit}{bs,cs,ds:bits}
-   BITS_LAND_CONS (BitsCons (b,bs),BitsCons (c,cs),BitsCons (d,ds))
+   BITS_LAND_CONS (BitsCons (bs,b),BitsCons (cs,c),BitsCons (ds,d))
     of (BIT_LAND (b,c,d), BITS_LAND (bs,cs,ds))
 
 fn {n:int}{bs,cs:bits} bits_uint_land (n:bits_uint_t (n,bs),m:bits_uint_t (n,cs)):
@@ -156,13 +156,13 @@ fn {n:int}{bs,cs:bits} bits_uint_land (n:bits_uint_t (n,bs),m:bits_uint_t (n,cs)
 
 
 dataprop SINGLE_BIT_BITS (int,int,bits) =
- | {n:int}{bs:bits}    SINGLE_BIT_BITS_bas (n+1,0, BitsCons (I,bs))
+ | {n:int}{bs:bits}    SINGLE_BIT_BITS_bas (n+1,0, BitsCons (bs,I))
                                         of (BITSEQINT (n,bs,0))
- | {n,bn:int}{bs:bits} SINGLE_BIT_BITS_ind (n+1,bn+1,BitsCons (O,bs))
+ | {n,bn:int}{bs:bits} SINGLE_BIT_BITS_ind (n+1,bn+1,BitsCons (bs,O))
                                         of (SINGLE_BIT_BITS (n,bn,bs))
 
-prfun singlebit_test1 (): SINGLE_BIT_BITS (1,0,BitsCons (I,BitsNil))
-prfun singlebit_test2 (): SINGLE_BIT_BITS (2,1,BitsCons (O,BitsCons (I,BitsNil)))
+prfun singlebit_test1 (): SINGLE_BIT_BITS (1,0,BitsCons (BitsNil,I))
+prfun singlebit_test2 (): SINGLE_BIT_BITS (2,1,BitsCons (BitsCons (BitsNil,I),O))
 prfun singlebit_test3 (): SINGLE_BIT_BITS (8,0,Bits8 (O,O,O,O,O,O,O,I))
 prfun singlebit_test4 (): SINGLE_BIT_BITS (8,7,Bits8 (I,O,O,O,O,O,O,O))
 prfun singlebit_test5 {bs:bits}(BITSEQINT (8,bs,1)):SINGLE_BIT_BITS (8,0,bs)
@@ -182,7 +182,7 @@ dataprop BIT_NOT (bit,bit) =
 dataprop BITS_NOT (bits,bits) =
  | BITS_NOT_NIL  (BitsNil,BitsNil) of ()
  | {b,c:bit}{bs,cs:bits}
-   BITS_NOT_CONS (BitsCons (b,bs),BitsCons (c,cs))
+   BITS_NOT_CONS (BitsCons (bs,b),BitsCons (cs,c))
     of (BIT_NOT (b,c), BITS_NOT (bs,cs))
 
 stadef neq_bit_bit (b,c:bit):bool = ~(b == c)
@@ -203,15 +203,16 @@ datasort bit_permission = BitPermission of
 
 datasort bit_permissions = 
  | BitPermsNil of ()
- | BitPermsCons of (bit_permission,bit_permissions)
+ | BitPermsCons of (bit_permissions,bit_permission)
 
 stadef BitPermissions8 (b7_0,b7_1,b6_0,b6_1,b5_0,b5_1,b4_0,b4_1,
                         b3_0,b3_1,b2_0,b2_1,b1_0,b1_1,b0_0,b0_1:permission): bit_permissions =
-  BitPermsCons (BitPermission (b0_0,b0_1),BitPermsCons (BitPermission (b1_0,b1_1),
-  BitPermsCons (BitPermission (b2_0,b2_1),BitPermsCons (BitPermission (b3_0,b3_1),
-  BitPermsCons (BitPermission (b4_0,b4_1),BitPermsCons (BitPermission (b5_0,b5_1),
-  BitPermsCons (BitPermission (b6_0,b6_1),BitPermsCons (BitPermission (b7_0,b7_1),
-  BitPermsNil ()))))))))
+  BitPermsCons (BitPermsCons (BitPermsCons (BitPermsCons (
+  BitPermsCons (BitPermsCons (BitPermsCons (BitPermsCons (BitPermsNil,
+  BitPermission (b7_0,b7_1)),BitPermission (b6_0,b6_1)),
+  BitPermission (b5_0,b5_1)),BitPermission (b4_0,b4_1)),
+  BitPermission (b3_0,b3_1)),BitPermission (b2_0,b2_1)),
+  BitPermission (b1_0,b1_1)),BitPermission (b0_0,b0_1))
 
 dataprop BIT_PERMIT_CERTIFICATE (bit_permission,bit) =
  | {p1:permission} BITPERMCERT_0 (BitPermission (Permit,p1),O) of ()
@@ -220,8 +221,8 @@ dataprop BIT_PERMIT_CERTIFICATE (bit_permission,bit) =
 dataprop BITS_PERMIT_CERTIFICATE (int,bit_permissions,bits) =
  | BITPERMCERTS_NIL (0, BitPermsNil, BitsNil) of ()
  | {n:int}{p:bit_permission}{ps:bit_permissions}{b:bit}{bs:bits}
-   BITPERMCERTS_CONS (n+1,BitPermsCons (p,ps),BitsCons (b,bs))
-    of (BIT_PERMIT_CERTIFICATE (p,b),BITS_PERMIT_CERTIFICATE (n,ps,bs))
+   BITPERMCERTS_CONS (n+1,BitPermsCons (ps,p),BitsCons (bs,b))
+    of (BITS_PERMIT_CERTIFICATE (n,ps,bs),BIT_PERMIT_CERTIFICATE (p,b))
 
 prfn bitspermcert_0 {bs:bits}(
     BITS_PERMIT_CERTIFICATE (8,BitPermissions8 (
@@ -266,17 +267,17 @@ prfn bitspermcert_all {bs:bits}(BITSLEN (bs,8)):
 
 prfn bitspermcert_inhaditat {any_prop:prop}{n:int}{bs:bits}{ps:bit_permissions}
     (BITS_PERMIT_CERTIFICATE (n,
-       BitPermsCons(BitPermission (Prohibit,Prohibit), ps),
+       BitPermsCons(ps,BitPermission (Prohibit,Prohibit)),
        bs)): any_prop
 
 dataprop BIT_PERMS_ADD (bit_permissions,bit_permissions,bit_permissions) =
 | {ps:bit_permissions} BIT_PERMS_ADD_NIL (BitPermsNil (),ps,ps) of ()
 | {p:bit_permission}{ps,qs,rs:bit_permissions}
-  BIT_PERMS_ADD_CONS (BitPermsCons (p,ps),qs,BitPermsCons (p,rs))
+  BIT_PERMS_ADD_CONS (BitPermsCons (ps,p),qs,BitPermsCons (rs,p))
     of BIT_PERMS_ADD (ps,qs,rs)
 
 prfun bitspermcerts_prohibit {any_prop:prop}{n:int}{bs:bits}{ps,qs,rs:bit_permissions}
-    (BIT_PERMS_ADD (ps,BitPermsCons (BitPermission (Prohibit,Prohibit),qs),rs),
+    (BIT_PERMS_ADD (ps,BitPermsCons (qs,BitPermission (Prohibit,Prohibit)),rs),
      BITS_PERMIT_CERTIFICATE (n,rs,bs))
     : any_prop
 

@@ -340,11 +340,11 @@ prfun singlebit_test8 {bs:bits}.<bs>.
   end
 
 prfn bits_cons_eq {b,c:bit | b == c}{bs,cs:bits | bs == cs} ()
-                   :[BitsCons (b,bs) == BitsCons (c,cs)] void
+                   :[BitsCons (bs,b) == BitsCons (cs,c)] void
  = let
      prval EQBIT ()  = eqbit_make {b,c} ()
      prval EQBITS () = eqbits_make {bs,cs} ()
-   in bits_eq_refl {BitsCons (b,bs)} () end
+   in bits_eq_refl {BitsCons (bs,b)} () end
 
 
 prfn lor_0_nochange {b,c:bit} (lor_p:BIT_LOR (b,O,c)):[b == c] void
@@ -367,8 +367,8 @@ prfun bitslor_0_nochange {n:int}{bs,cs,ds:bits} .<bs>.
    | BitsNil ()       => let
        prval BITS_LOR_NIL () = lor_p
      in bits_eq_refl {BitsNil} () end // BitsNil = BitsNil
-   | BitsCons (b,bs') => scase ds of
-       | BitsCons (d,ds') => let
+   | BitsCons (bs',b) => scase ds of
+       | BitsCons (ds',d) => let
            prval BITS_LOR_CONS (blor,bslor)    = lor_p
            prval BEQCONS       (eq0',B0EQ0 ()) = eq0
            prval () = lor_0_nochange (blor)
@@ -436,18 +436,18 @@ prfun singlebitslor__changebit1 {n,bn:int}{bs,cs,ds:bits} .<bs>.
        prval ()                               = bit_eq_refl {d} ()
        prval ()                               = bits_cons_eq {d,d}{bs',ds'} ()
        prval ()                               = bits_eq_refl {bs} ()
-     in change_bit_bits_eq {n,0}{d,I}{bs,BitsCons (d,bs'),bs,BitsCons (d,ds')}(chbit) end
+     in change_bit_bits_eq {n,0}{d,I}{bs,BitsCons (bs',d),bs,BitsCons (ds',d)}(chbit) end
    | SINGLE_BIT_BITS_ind {n',bn}{cs'}(single') => let
        prval BITS_LOR_CONS {b,c,d:bit}{bs',cs',ds':bits}
                            (bit_lor,bits_lor) = lor_p
        prval ()                               = lor_0_nochange (bit_lor)
-       // CHANGE_BIT_BITS (n'+1,BitsCons (?,bs'),bn,I,BitsCons (?,ds'))
+       // CHANGE_BIT_BITS (n'+1,BitsCons (bs',?),bn,I,BitsCons (ds',?))
        prval chbit                            = CHANGE_BIT_BITS_ind (singlebitslor__changebit1 (single',bits_lor))
        prval ()                               = bits_eq_refl {ds'} ()
        prval ()                               = bits_cons_eq {b,d}{ds',ds'} ()
        prval ()                               = bit_eq_refl {I} ()
        prval ()                               = bits_eq_refl {bs} ()
-     in change_bit_bits_eq {n,bn+1}{I,I}{bs,BitsCons (b,ds'),bs,BitsCons (d,ds')}(chbit) end
+     in change_bit_bits_eq {n,bn+1}{I,I}{bs,BitsCons (ds',b),bs,BitsCons (ds',d)}(chbit) end
 
 (*
 fn {bs:bits}
@@ -500,8 +500,8 @@ prfun bitsland_not0_nochange {n:int}{bs,cs,ds,es:bits} .<bs>.
    | BitsNil ()       => let
        prval BITS_LAND_NIL () = bs_and_ds
      in bits_eq_refl {BitsNil} () end // BitsNil = BitsNil
-   | BitsCons (b,bs') => scase es of
-       | BitsCons (e,es') => let
+   | BitsCons (bs',b) => scase es of
+       | BitsCons (es',e) => let
            prval BITS_LAND_CONS (b_and_d,bs'_and_ds') = bs_and_ds
            prval BITS_NOT_CONS (c_not,cs'_not)        = cs_not
            prval BEQCONS (cs'_eq0,B0EQ0 ())           = cs_eq0
@@ -529,24 +529,24 @@ prfun notsinglebitsland__changebit0 {n,bn:int}{bs,cs,ds,es:bits} .<bs>.
        prval ()                                 = land_0_assign {b,e} (b_and_d)
        prval ()                                 = bit_eq_comm {O,e}()
        prval ()                                 = bitsland_not0_nochange {n'}{bs',cs',ds',es'}(bs'_and_ds',cs'_eq_0,cs'_not)
-       // CHANGE_BIT_BITS (n'+1,BitsCons (b,bs'),n',d,BitsCons (e,bs'))
+       // CHANGE_BIT_BITS (n'+1,BitsCons (bs',b),n',d,BitsCons (bs',e))
        prval chbit                  = CHANGE_BIT_BITS_bas {n'}{b,e}{bs'} (bs'len)
        prval ()                     = bit_eq_refl {e} ()
        prval ()                     = bits_cons_eq {e,e}{bs',es'} ()
        prval ()                     = bits_eq_refl {bs} ()
-     in change_bit_bits_eq {n,0}{e,O}{bs,BitsCons (e,bs'),bs,BitsCons (e,es')}(chbit) end
+     in change_bit_bits_eq {n,0}{e,O}{bs,BitsCons (bs',e),bs,BitsCons (es',e)}(chbit) end
    | SINGLE_BIT_BITS_ind {n',bn}{cs'}(single') => let
        prval BITS_NOT_CONS (BIT_NOT0 (),cs'_not)       = cs_not
        prval BITS_LAND_CONS {b,d,e:bit}{bs',ds',es':bits}
                            (b_and_d,bs'_and_ds') = bs_and_ds
        prval ()                                  = land_1_nochange (b_and_d)
-       // CHANGE_BIT_BITS (n'+1,BitsCons (?,bs'),bn,I,BitsCons (?,ds'))
+       // CHANGE_BIT_BITS (n'+1,BitsCons (bs',?),bn,I,BitsCons (ds',?))
        prval chbit                               = CHANGE_BIT_BITS_ind (notsinglebitsland__changebit0 (single',cs'_not,bs'_and_ds'))
        prval ()                                  = bits_eq_refl {es'} ()
        prval ()                                  = bits_cons_eq {b,e}{es',es'} ()
        prval ()                                  = bit_eq_refl {O} ()
        prval ()                                  = bits_eq_refl {bs} ()
-     in change_bit_bits_eq {n,bn+1}{O,O}{bs,BitsCons (b,es'),bs,BitsCons (e,es')}(chbit) end
+     in change_bit_bits_eq {n,bn+1}{O,O}{bs,BitsCons (es',b),bs,BitsCons (es',e)}(chbit) end
 
 implement {bs} clearBitBits {n,bn} (v,bn)
  = let
@@ -598,7 +598,7 @@ prfun bitseqint_injective {n,m,v,w:int}{bs:bits} .<bs>.
        prval BEQNIL () = bs_eq_v
        prval BEQNIL () = bs_eq_w
      in end
-   | BitsCons (b,bs') =>
+   | BitsCons (bs',b) =>
      scase b of
      | O () => let
          prval BEQCONS (bs'_eq_v',B0EQ0 ()) = bs_eq_v
@@ -673,7 +673,7 @@ prfun singlebit_and_bs_neq0__testbit
             prval ()       = land_1_nochange {b,O} (b_and_c)
               prval ()       = bits_eq_refl {bs'} ()
               prval ()       = bits_cons_eq {b,O}{bs',bs'} ()
-              prval ()       = bits_eq_comm {BitsCons (b,bs'), BitsCons (O,bs')} ()
+              prval ()       = bits_eq_comm {BitsCons (bs',b), BitsCons (bs',O)} ()
               prval ()       = bit_eq_comm {b,O} ()
               prval EQBIT () = eqbit_make {b,O} ()
               prval ()       = bit_I_neq_O ()
@@ -724,11 +724,11 @@ prfn bitspermcert_0 {bs:bits}(
 *)
 primplement bitspermcert_0 {bs}(perms)
  = let
-     prval BITPERMCERTS_CONS (BITPERMCERT_0 (), BITPERMCERTS_CONS (BITPERMCERT_0 (),
-           BITPERMCERTS_CONS (BITPERMCERT_0 (), BITPERMCERTS_CONS (BITPERMCERT_0 (),
-           BITPERMCERTS_CONS (BITPERMCERT_0 (), BITPERMCERTS_CONS (BITPERMCERT_0 (),
-           BITPERMCERTS_CONS (BITPERMCERT_0 (), BITPERMCERTS_CONS (BITPERMCERT_0 (),
-           BITPERMCERTS_NIL ())))))))) = perms
+     prval BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (
+           BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (
+           BITPERMCERTS_NIL (),
+           BITPERMCERT_0 ()),BITPERMCERT_0 ()),BITPERMCERT_0 ()),BITPERMCERT_0 ()),
+           BITPERMCERT_0 ()),BITPERMCERT_0 ()),BITPERMCERT_0 ()),BITPERMCERT_0 ()) = perms
    in bits_eq_refl {bs}() end
 
 (*
@@ -741,11 +741,12 @@ prfn bitspermcert_1 {bs:bits}(
 *)
 primplement bitspermcert_1 {bs}(perms)
  = let
-     prval BITPERMCERTS_CONS (BITPERMCERT_1 (), BITPERMCERTS_CONS (BITPERMCERT_0 (),
-           BITPERMCERTS_CONS (BITPERMCERT_0 (), BITPERMCERTS_CONS (BITPERMCERT_0 (),
-           BITPERMCERTS_CONS (BITPERMCERT_0 (), BITPERMCERTS_CONS (BITPERMCERT_0 (),
-           BITPERMCERTS_CONS (BITPERMCERT_0 (), BITPERMCERTS_CONS (BITPERMCERT_0 (),
-           BITPERMCERTS_NIL ())))))))) = perms
+     prval BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (
+           BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (
+           BITPERMCERTS_NIL (),
+           BITPERMCERT_0 ()),BITPERMCERT_0 ()),BITPERMCERT_0 ()),BITPERMCERT_0 ()),
+           BITPERMCERT_0 ()),BITPERMCERT_0 ()),BITPERMCERT_0 ()),BITPERMCERT_1 ())
+            = perms
    in bits_eq_refl {bs}() end
 
 (*
@@ -758,11 +759,11 @@ prfn bitspermcert_2 {bs:bits}(
 *)
 primplement bitspermcert_2 {bs}(perms)
  = let
-     prval BITPERMCERTS_CONS (BITPERMCERT_0 (), BITPERMCERTS_CONS (BITPERMCERT_1 (),
-           BITPERMCERTS_CONS (BITPERMCERT_0 (), BITPERMCERTS_CONS (BITPERMCERT_0 (),
-           BITPERMCERTS_CONS (BITPERMCERT_0 (), BITPERMCERTS_CONS (BITPERMCERT_0 (),
-           BITPERMCERTS_CONS (BITPERMCERT_0 (), BITPERMCERTS_CONS (BITPERMCERT_0 (),
-           BITPERMCERTS_NIL ())))))))) = perms
+     prval BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (
+           BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (
+           BITPERMCERTS_NIL (),
+           BITPERMCERT_0 ()),BITPERMCERT_0 ()),BITPERMCERT_0 ()),BITPERMCERT_0 ()),
+           BITPERMCERT_0 ()),BITPERMCERT_0 ()),BITPERMCERT_1 ()),BITPERMCERT_0 ()) = perms
    in bits_eq_refl {bs}() end
 
 (*
@@ -775,11 +776,11 @@ prfn bitspermcert_128 {bs:bits}(
 *)
 primplement bitspermcert_128 {bs}(perms)
  = let
-     prval BITPERMCERTS_CONS (BITPERMCERT_0 (), BITPERMCERTS_CONS (BITPERMCERT_0 (),
-           BITPERMCERTS_CONS (BITPERMCERT_0 (), BITPERMCERTS_CONS (BITPERMCERT_0 (),
-           BITPERMCERTS_CONS (BITPERMCERT_0 (), BITPERMCERTS_CONS (BITPERMCERT_0 (),
-           BITPERMCERTS_CONS (BITPERMCERT_0 (), BITPERMCERTS_CONS (BITPERMCERT_1 (),
-           BITPERMCERTS_NIL ())))))))) = perms
+     prval BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (
+     			 BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (
+           BITPERMCERTS_NIL (),
+     			 BITPERMCERT_1 ()),BITPERMCERT_0 ()),BITPERMCERT_0 ()),BITPERMCERT_0 ()),
+           BITPERMCERT_0 ()),BITPERMCERT_0 ()),BITPERMCERT_0 ()),BITPERMCERT_0 ()) = perms
    in bits_eq_refl {bs}() end
 
 (*
@@ -792,11 +793,11 @@ prfn bitspermcert_255 {bs:bits}(
 *)
 primplement bitspermcert_255 {bs}(perms)
  = let
-     prval BITPERMCERTS_CONS (BITPERMCERT_1 (), BITPERMCERTS_CONS (BITPERMCERT_1 (),
-           BITPERMCERTS_CONS (BITPERMCERT_1 (), BITPERMCERTS_CONS (BITPERMCERT_1 (),
-           BITPERMCERTS_CONS (BITPERMCERT_1 (), BITPERMCERTS_CONS (BITPERMCERT_1 (),
-           BITPERMCERTS_CONS (BITPERMCERT_1 (), BITPERMCERTS_CONS (BITPERMCERT_1 (),
-           BITPERMCERTS_NIL ())))))))) = perms
+     prval BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (
+     			 BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (
+           BITPERMCERTS_NIL (),
+           BITPERMCERT_1 ()),BITPERMCERT_1 ()),BITPERMCERT_1 ()),BITPERMCERT_1 ()),
+           BITPERMCERT_1 ()),BITPERMCERT_1 ()),BITPERMCERT_1 ()),BITPERMCERT_1 ()) = perms
    in bits_eq_refl {bs}() end
 
 (*
@@ -818,23 +819,28 @@ prfun bitslen0__nil {bs:bits}.<bs>.(bslen:BITSLEN (bs,0)): [bs == BitsNil] void
    | BITSLENNIL ()        =>   bits_eq_refl {bs}()
    | BITSLENCONS (bs'len) =/=> bitslen_nat (bs'len)
 
+(*prfn bitspermcert_all {bs:bits}(BITSLEN (bs,8)):
+    BITS_PERMIT_CERTIFICATE (8,BitPermissions8 (
+        Permit,Permit, Permit,Permit, Permit,Permit, Permit,Permit,
+        Permit,Permit, Permit,Permit, Permit,Permit, Permit,Permit),
+      bs)*)
 primplement bitspermcert_all {bs8}(bs8len)
  = let
-     prval BITSLENCONS {n7}{b8}{bs7}(bs7len) = bs8len
-     prval BITSLENCONS {n6}{b7}{bs6}(bs6len) = bs7len
-     prval BITSLENCONS {n5}{b6}{bs5}(bs5len) = bs6len
-     prval BITSLENCONS {n4}{b5}{bs4}(bs4len) = bs5len
+     prval BITSLENCONS {n7}{b0}{bs7}(bs7len) = bs8len
+     prval BITSLENCONS {n6}{b1}{bs6}(bs6len) = bs7len
+     prval BITSLENCONS {n5}{b2}{bs5}(bs5len) = bs6len
+     prval BITSLENCONS {n4}{b3}{bs4}(bs4len) = bs5len
      prval BITSLENCONS {n3}{b4}{bs3}(bs3len) = bs4len
-     prval BITSLENCONS {n2}{b3}{bs2}(bs2len) = bs3len
-     prval BITSLENCONS {n1}{b2}{bs1}(bs1len) = bs2len
-     prval BITSLENCONS {n0}{b1}{bs0}(bs0len) = bs1len
+     prval BITSLENCONS {n2}{b5}{bs2}(bs2len) = bs3len
+     prval BITSLENCONS {n1}{b6}{bs1}(bs1len) = bs2len
+     prval BITSLENCONS {n0}{b7}{bs0}(bs0len) = bs1len
      prval () = bitslen0__nil {bs0}(bs0len)
      prval EQBITS () = eqbits_make {bs0,BitsNil}()
-   in BITPERMCERTS_CONS (bperm_all {b8}(), BITPERMCERTS_CONS (bperm_all {b7}(),
-      BITPERMCERTS_CONS (bperm_all {b6}(), BITPERMCERTS_CONS (bperm_all {b5}(),
-      BITPERMCERTS_CONS (bperm_all {b4}(), BITPERMCERTS_CONS (bperm_all {b3}(),
-      BITPERMCERTS_CONS (bperm_all {b2}(), BITPERMCERTS_CONS (bperm_all {b1}(),
-      BITPERMCERTS_NIL ())))))))) end
+   in BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (
+   	  BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (
+   	  BITPERMCERTS_NIL (),
+   	  bperm_all {b7}()),bperm_all {b6}()),bperm_all {b5}()),bperm_all {b4}()),
+   	  bperm_all {b3}()),bperm_all {b2}()),bperm_all {b1}()),bperm_all {b0}()) end
 
 (*
 prfn bitspermcert_inhaditat {any_prop:prop}{n:int}{bs:bits}{ps:bit_permissions}
@@ -845,7 +851,7 @@ prfn bitspermcert_inhaditat {any_prop:prop}{n:int}{bs:bits}{ps:bit_permissions}
 
 primplement bitspermcert_inhaditat {any_prop}{n}{bs}{ps}(perms)
  = let
-     prval BITPERMCERTS_CONS (perm, perms') = perms
+     prval BITPERMCERTS_CONS (perms',perm) = perms
    in case+ perm of
       | BITPERMCERT_0 () =/=> ()
       | BITPERMCERT_1 () =/=> ()
@@ -861,7 +867,7 @@ primplement bitspermcerts_prohibit {any_prop}{n}{bs}{ps,qs',rs}(ps_qs_add,perms)
  = case+ ps_qs_add of
    | BIT_PERMS_ADD_NIL () => bitspermcert_inhaditat (perms)
    | BIT_PERMS_ADD_CONS {p}{ps',qs,rs'}(ps'_qs_add) => let
-       prval BITPERMCERTS_CONS {n'}{r2}{rs'2}{b}{bs'} (perm, perms') = perms
+       prval BITPERMCERTS_CONS {n'}{r2}{rs'2}{b}{bs'} (perms',perm) = perms
      in bitspermcerts_prohibit {any_prop}{n'}{bs'}{ps',qs',rs'}(ps'_qs_add,perms') end
 
   
