@@ -870,4 +870,55 @@ primplement bitspermcerts_prohibit {any_prop}{n}{bs}{ps,qs',rs}(ps_qs_add,perms)
        prval BITPERMCERTS_CONS {n'}{r2}{rs'2}{b}{bs'} (perms',perm) = perms
      in bitspermcerts_prohibit {any_prop}{n'}{bs'}{ps',qs',rs'}(ps'_qs_add,perms') end
 
-  
+(*
+fn {n:int}{bs,cs:bits} bits_uint_lor (n:bits_uint_t (n,bs),m:bits_uint_t (n,cs)):
+   [ds:bits] (BITS_LOR (bs,cs,ds) | bits_uint_t (n,ds))
+*)
+implement {n}{bs,cs} bits_uint_lor (v,w)
+ = let
+     extern prfun bitseqint_total {n,v:int} ():[bs:bits] BITSEQINT (n,bs,v)
+     val+ (bs_eq_v | uint_v) = v
+     val+ (cs_eq_w | uint_w) = w
+     val+ [r:int] uint_r = g1ofg0_uint (uint_v lor uint_w)
+     prval [ds] ds_eq_r = bitseqint_total {n,r}()
+     prval bs_lor_cs = $UN.proof_assert {BITS_LOR (bs,cs,ds)}()
+   in (bs_lor_cs | (ds_eq_r | uint_r)) end
+
+(*
+fn {n:int}{bs,cs:bits} bits_uint_land (n:bits_uint_t (n,bs),m:bits_uint_t (n,cs)):
+   [ds:bits] (BITS_LAND (bs,cs,ds) | bits_uint_t (n,ds))
+*)
+implement {n}{bs,cs} bits_uint_land (v,w)
+ = let
+     extern prfun bitseqint_total {n,v:int} ():[bs:bits] BITSEQINT (n,bs,v)
+     val+ (bs_eq_v | uint_v) = v
+     val+ (cs_eq_w | uint_w) = w
+     val+ [r:int] uint_r = g1ofg0_uint (uint_v land uint_w)
+     prval [ds] ds_eq_r = bitseqint_total {n,r}()
+     prval bs_lor_cs = $UN.proof_assert {BITS_LAND (bs,cs,ds)}()
+   in (bs_lor_cs | (ds_eq_r | uint_r)) end
+
+(*
+fn {n,bn:int} make_single_bit (bn:uint bn):
+  [bs:bits] (SINGLE_BIT_BITS (n,bn,bs) | bits_uint_t (n,bs))
+*)
+implement {n,bn} make_single_bit (uint_v)
+ = let
+     extern prfun bitseqint_total {n,v:int} ():[bs:bits] BITSEQINT (n,bs,v)
+     val+ [r:int] uint_r = g1ofg0_uint (g0int2uint (1) << g1uint2int (uint_v))
+     prval [cs] cs_eq_r = bitseqint_total {n,r}()
+     prval cs_single = $UN.proof_assert {SINGLE_BIT_BITS (n,bn,cs)}()
+   in (cs_single | (cs_eq_r | uint_r)) end
+
+(*
+fn {n:int}{bs:bits} bits_uint_not (n:bits_uint_t (n,bs)):
+   [cs:bits] (BITS_NOT (bs,cs) | bits_uint_t (n,cs))
+*)
+implement {n}{bs} bits_uint_not (v)
+ = let
+     extern prfun bitseqint_total {n,v:int} ():[bs:bits] BITSEQINT (n,bs,v)
+     val+ (bs_eq_v | uint_v) = v
+     val+ [r:int] uint_r = g1ofg0_uint (~uint_v)
+     prval [cs] cs_eq_r = bitseqint_total {n,r}()
+     prval bs_lnot = $UN.proof_assert {BITS_NOT (bs,cs)}()
+   in (bs_lnot | (cs_eq_r | uint_r)) end
