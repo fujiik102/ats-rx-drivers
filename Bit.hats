@@ -1,8 +1,5 @@
 
 
-#include "share/atspre_define.hats"
-#include "share/atspre_staload.hats"
-
 
 prfn {n:int} le_plus_1 ():[n <= n + 1] void = ()
 prfn {n:int} le_refl   ():[n <= n]     void = ()

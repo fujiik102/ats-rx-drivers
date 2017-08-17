@@ -10,9 +10,10 @@
 #include "share/atspre_define.hats"
 #include "share/atspre_staload.hats"
 
-
 staload UN = "prelude/SATS/unsafe.sats"
 staload "Bit.sats"
+
+#include "Bit.hats"
 
 //
 (* ****** ****** *)
@@ -27,15 +28,6 @@ implement main0 () = () // a dummy implementation for [main]
 
 
 prfn {n:int} le_refl   ():[n <= n]     void = ()
-
-primplement beqint_is_nat {n,v}{bs} (beqint_fst)
- = let
-     prfun aux {n,v:int}{bs:bits} .<bs>. (beqint:BITSEQINT (n,bs,v)):[0 <= v] void =
-       case+ beqint of
-       | BEQNIL   ()       => le_refl ()   // 0 <= 0
-       | BEQCONS (beqind,B0EQ0 ()) => aux (beqind) // (0 <= n) -> (0 <= n+0)
-       | BEQCONS (beqind,B1EQ1 ()) => aux (beqind) // (0 <= n) -> (0 <= n+1)
-   in aux (beqint_fst) end
 
 prfn {b:bit}{v:int} beqint_nat2 (beqint:BITEQINT (b,v)):[0 <= v][v <= 1] void
  = case+ beqint of
@@ -876,11 +868,14 @@ fn {n:int}{bs,cs:bits} bits_uint_lor (n:bits_uint_t (n,bs),m:bits_uint_t (n,cs))
 *)
 implement {n}{bs,cs} bits_uint_lor (v,w)
  = let
-     extern prfun bitseqint_total {n,v:int} ():[bs:bits] BITSEQINT (n,bs,v)
      val+ (bs_eq_v | uint_v) = v
      val+ (cs_eq_w | uint_w) = w
      val+ [r:int] uint_r = g1ofg0_uint (uint_v lor uint_w)
-     prval [ds] ds_eq_r = bitseqint_total {n,r}()
+     prval () = bseqint_len_is_nat (bs_eq_v)
+     prval [npow](pow2) = pow2_total {n}()
+     prval () = $UN.prop_assert {r < npow}()
+     prval () = $UN.prop_assert {r < INTMAX}()
+     prval [ds] ds_eq_r = nat_eq_bits {n,npow,r}(pow2)
      prval bs_lor_cs = $UN.proof_assert {BITS_LOR (bs,cs,ds)}()
    in (bs_lor_cs | (ds_eq_r | uint_r)) end
 
@@ -890,11 +885,14 @@ fn {n:int}{bs,cs:bits} bits_uint_land (n:bits_uint_t (n,bs),m:bits_uint_t (n,cs)
 *)
 implement {n}{bs,cs} bits_uint_land (v,w)
  = let
-     extern prfun bitseqint_total {n,v:int} ():[bs:bits] BITSEQINT (n,bs,v)
      val+ (bs_eq_v | uint_v) = v
      val+ (cs_eq_w | uint_w) = w
      val+ [r:int] uint_r = g1ofg0_uint (uint_v land uint_w)
-     prval [ds] ds_eq_r = bitseqint_total {n,r}()
+     prval () = bseqint_len_is_nat (bs_eq_v)
+     prval [npow](pow2) = pow2_total {n}()
+     prval () = $UN.prop_assert {r < npow}()
+     prval () = $UN.prop_assert {r < INTMAX}()
+     prval [ds] ds_eq_r = nat_eq_bits {n,npow,r}(pow2)
      prval bs_lor_cs = $UN.proof_assert {BITS_LAND (bs,cs,ds)}()
    in (bs_lor_cs | (ds_eq_r | uint_r)) end
 
@@ -904,9 +902,11 @@ fn {n,bn:int} make_single_bit (bn:uint bn):
 *)
 implement {n,bn} make_single_bit (uint_v)
  = let
-     extern prfun bitseqint_total {n,v:int} ():[bs:bits] BITSEQINT (n,bs,v)
      val+ [r:int] uint_r = g1ofg0_uint (g0int2uint (1) << g1uint2int (uint_v))
-     prval [cs] cs_eq_r = bitseqint_total {n,r}()
+     prval [npow](pow2) = pow2_total {n}()
+     prval () = $UN.prop_assert {r < npow}()
+     prval () = $UN.prop_assert {r < INTMAX}()
+     prval [cs] cs_eq_r = nat_eq_bits {n,npow,r}(pow2)
      prval cs_single = $UN.proof_assert {SINGLE_BIT_BITS (n,bn,cs)}()
    in (cs_single | (cs_eq_r | uint_r)) end
 
@@ -916,9 +916,13 @@ fn {n:int}{bs:bits} bits_uint_not (n:bits_uint_t (n,bs)):
 *)
 implement {n}{bs} bits_uint_not (v)
  = let
-     extern prfun bitseqint_total {n,v:int} ():[bs:bits] BITSEQINT (n,bs,v)
      val+ (bs_eq_v | uint_v) = v
      val+ [r:int] uint_r = g1ofg0_uint (~uint_v)
-     prval [cs] cs_eq_r = bitseqint_total {n,r}()
+     prval () = bseqint_len_is_nat (bs_eq_v)
+     prval [npow](pow2) = pow2_total {n}()
+     prval () = $UN.prop_assert {r < npow}()
+     prval () = $UN.prop_assert {r < INTMAX}()
+     prval [cs] cs_eq_r = nat_eq_bits {n,npow,r}(pow2)
      prval bs_lnot = $UN.proof_assert {BITS_NOT (bs,cs)}()
    in (bs_lnot | (cs_eq_r | uint_r)) end
+

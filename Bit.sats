@@ -171,7 +171,7 @@ prfun singlebit_test7 {bs:bits}(SINGLE_BIT_BITS (8,0,bs)):BITSEQINT (8,bs,1)
 prfun singlebit_test8 {bs:bits}(SINGLE_BIT_BITS (8,7,bs)):BITSEQINT (8,bs,128)
 
 // 1 << bn
-fn {n,bn:int} make_single_bit (bn:uint bn):
+fn {n,bn:int} make_single_bit {bn < n}{n <= INTBITS}(bn:uint bn):
   [bs:bits] (SINGLE_BIT_BITS (n,bn,bs) | bits_uint_t (n,bs))
 
 
