@@ -13,7 +13,7 @@
 staload UN = "prelude/SATS/unsafe.sats"
 staload "Bit.sats"
 
-#include "Bit.hats"
+#include "BitInt.hats"
 
 //
 (* ****** ****** *)
