@@ -1,4 +1,5 @@
-// 端子制御ドライバ定義
+
+// Pin control drivers
 
 staload "Bit.sats"
 
@@ -22,43 +23,105 @@ stadef IOPort2int (p:IOPort):int =
   ifint (p==PortI,18, ifint (p==PortJ,19,
   ~1))))))))))))))))))))
 
-typedef ioport_t (p:IOPort) = int (IOPort2int p)
+typedef ioport_uint_t (p:IOPort) = uint (IOPort2int p)
 
-datasort Pin = Pin of (IOPort, int)
+datasort Pin = Pin of (IOPort,int)
 
-typedef pin_t (p:IOPort, n:int) = @(ioport_t p, int n)
+typedef pin_uint_t (p:IOPort,n:int) = @(ioport_uint_t p, uint n)
 
+
+stadef P0 (n:int):Pin = Pin (Port0,n)
+stadef P1 (n:int):Pin = Pin (Port1,n)
+stadef P2 (n:int):Pin = Pin (Port2,n)
+stadef P3 (n:int):Pin = Pin (Port3,n)
+stadef P4 (n:int):Pin = Pin (Port4,n)
+stadef P5 (n:int):Pin = Pin (Port5,n)
+stadef P6 (n:int):Pin = Pin (Port6,n)
+stadef P7 (n:int):Pin = Pin (Port7,n)
+stadef P8 (n:int):Pin = Pin (Port8,n)
+stadef P9 (n:int):Pin = Pin (Port9,n)
+stadef PA (n:int):Pin = Pin (PortA,n)
+stadef PB (n:int):Pin = Pin (PortB,n)
+stadef PC (n:int):Pin = Pin (PortC,n)
+stadef PD (n:int):Pin = Pin (PortD,n)
+stadef PE (n:int):Pin = Pin (PortE,n)
+stadef PF (n:int):Pin = Pin (PortF,n)
+stadef PG (n:int):Pin = Pin (PortG,n)
+stadef PH (n:int):Pin = Pin (PortH,n)
+stadef PI (n:int):Pin = Pin (PortI,n)
+stadef PJ (n:int):Pin = Pin (PortJ,n)
+
+
+// Special form of fractional (n/2^m only)
+datasort bisectional = bisectional of (int,int)
+
+stadef bisect1 = bisectional (0,1)
+
+dataprop EQBISECTIONAL (bisectional, bisectional) = {r:bisectional} EQBISECTIONAL (r, r)
+praxi eqbisectional_make {r,s:bisectional | r == s} () : EQBISECTIONAL (r,s)
+praxi bisectional_eq_refl {r:bisectional} () : [r == r] void
+praxi bisectional_eq_reduce {n,m:int | n <= INTMAX_HALF} ():
+      [bisectional (n,m) == bisectional (n+n,m+1)] void
+
+stacst bisectional_add_b : (bisectional,bisectional,bisectional) -> bool
+
+praxi {n1,n2,m:int} bisectional_add_axi ():
+      [bisectional_add_b (bisectional (n1,m),bisectional (n2,m),bisectional (n1+n2,m))] unit_p
+
+stacst bisectional_half_b : (bisectional,bisectional) -> bool
+
+praxi {n,m:int} bisectional_half_axi ():
+      [bisectional_half_b (bisectional (n,m),bisectional (n,m+1))] unit_p
 
 // PMR
 
-absview PMR_BIT_V (Pin, bit)
+absview PMR_BIT_V (Pin,bit,bisectional)
+
+praxi {p:Pin}{b:bit} divide_pmr_bit_v {r,s:bisectional | bisectional_half_b (r,s)}
+      (PMR_BIT_V (p,b,r)) : (PMR_BIT_V (p,b,s),PMR_BIT_V (p,b,s))
+
+praxi {p:Pin}{b:bit} merge_pmr_bit_v {r,s,t:bisectional | bisectional_add_b (r,s,t)}
+      (PMR_BIT_V (p,b,r), PMR_BIT_V (p,b,s)):(PMR_BIT_V (p,b,t))
+
 
 stadef PMR_BIT_IOPORT     = O
 stadef PMR_BIT_PERIPHERAL = I
 
 dataview PMR_V (IOPort,bits) =
-   {p:IOPort}{b7,b6,b5,b4,b3,b2,b1,b0:bit}
-   PMR_V (p, Bits8 (b7,b6,b5,b4,b3,b2,b1,b0)) of
-     (PMR_BIT_V (Pin (p,0), b0), PMR_BIT_V (Pin (p,1), b1),
-      PMR_BIT_V (Pin (p,2), b2), PMR_BIT_V (Pin (p,3), b3),
-      PMR_BIT_V (Pin (p,4), b4), PMR_BIT_V (Pin (p,5), b5),
-      PMR_BIT_V (Pin (p,6), b6), PMR_BIT_V (Pin (p,7), b7))
+    {p:IOPort}{b7,b6,b5,b4,b3,b2,b1,b0:bit}
+    PMR_V (p,Bits8 (b7,b6,b5,b4,b3,b2,b1,b0)) of
+      (PMR_BIT_V (Pin (p,7),b0,bisect1), PMR_BIT_V (Pin (p,6),b1,bisect1),
+       PMR_BIT_V (Pin (p,5),b2,bisect1), PMR_BIT_V (Pin (p,4),b3,bisect1),
+       PMR_BIT_V (Pin (p,3),b4,bisect1), PMR_BIT_V (Pin (p,2),b5,bisect1),
+       PMR_BIT_V (Pin (p,1),b6,bisect1), PMR_BIT_V (Pin (p,0),b7,bisect1))
+
+absprop PMR_PERMISSION (IOPort,bit_permissions)
+
+propdef PMR_PERMIT (p:IOPort,bs:bits) =
+    [perms:bit_permissions]
+    (PMR_PERMISSION (p,perms),BITS_PERMIT_CERTIFICATE (8,perms,bs))
 
 fn {bs,cs:bits}{p:IOPort}
-  writePMR (PMR_V (p,bs) | ioport_t p, bits_uint_t (8,cs))
+  writePMR (PMR_V (p,bs), PMR_PERMIT (p,cs) | ioport_uint_t p, bits_uint_t (8,cs))
    :(PMR_V (p,cs) | void)
 
 fn {bs,cs:bits}{p:IOPort}{b:bit}
   changePMRBit {bn:int | bn < 8}
     (CHANGE_BIT_BITS (8,bs,bn,b,cs),
-     !PMR_V (p,bs) >> PMR_V (p,cs)
-    | pin_t (p,bn), bit_uint_t b):void
+     !PMR_V (p,bs) >> PMR_V (p,cs),
+     PMR_PERMIT (p,cs)
+    | pin_uint_t (p,bn), bit_uint_t b):void
 
 fn {bs:bits}{p:IOPort}
-  readPMR (!PMR_V (p,bs) | p:ioport_t p)
+  readPMR (!PMR_V (p,bs) | p:ioport_uint_t p)
    :bits_uint_t (8,bs)
 
-// PFS関数は延期。PFS_Vのみ定義して、初期値の状態のみ取得できるようにする。
+fn {p:IOPort}{n:int}{b:bit}{r:bisectional}
+  readPMRbit (!PMR_BIT_V (Pin (p,n),b,r) | pin:pin_uint_t (p,n))
+   :bool (b==I)
+
+// The PFS function is postponed.
+// Define only PFS_V so that other functions can acquire the state of the initial value
 (*
 // PWPR
 
@@ -89,7 +152,7 @@ fn {p:IOPort}{pnum:int}
     !PFS_V (Pin (p,pnum),Bits8 (asel,isel,O,psel4,psel3,psel2,psel1,psel0)) >>
      PFS_V (Pin (p,pnum),Bits8 (O,O,O,O,O,O,O,O)),
     !PMR_BIT_V (Pin (p,pnum), O)
-  | pin_t (p,pnum),
+  | pin_uint_t (p,pnum),
     bits8int_t (O,O,O,O,O,O,O,O)
   )
   :void
@@ -97,14 +160,14 @@ fn {p:IOPort}{pnum:int}
 fn {p:IOPort}{pnum:int}{asel,isel,psel4,psel3,psel2,psel1,psel0:bit}
   readPFS (
     !PFS_V (Pin (p,pnum),Bits8 (asel,isel,O,psel4,psel3,psel2,psel1,psel0))
-  | pin_t (p, pnum)
+  | pin_uint_t (p, pnum)
   )
   :bits8int_t (asel,isel,O,psel4,psel3,psel2,psel1,psel0)
 *)
 
-// TODO 周辺機器の重複禁止ビュー
-//      最初に機器割り当て端子なしの観を発行する。
-//       端子ごとの書き込み許可/禁止のpropが必要。
+// TODO Create duplicate prohibited view of peripheral devices.
+//      Issues view with no device assignment pins first.
+//       Propriety of writing / disabling per pins is required.
 
 
 // PDR
@@ -112,90 +175,115 @@ fn {p:IOPort}{pnum:int}{asel,isel,psel4,psel3,psel2,psel1,psel0:bit}
 stadef PDR_BIT_WRITABLE  = I
 stadef PDR_BIT_READ_ONLY = O
 
-absview PDR_BIT_V (Pin, bit)
-dataview PDR_V (IOPort,bits) =
-  {p:IOPort}{b7,b6,b5,b4,b3,b2,b1,b0:bit}
-  PDR_V (p, Bits8 (b0,b1,b2,b3,b4,b5,b6,b7)) of
-            (PDR_BIT_V (Pin (p,0),b0), PDR_BIT_V (Pin (p,1),b1),
-             PDR_BIT_V (Pin (p,2),b2), PDR_BIT_V (Pin (p,3),b3),
-             PDR_BIT_V (Pin (p,4),b4), PDR_BIT_V (Pin (p,5),b5),
-             PDR_BIT_V (Pin (p,6),b6), PDR_BIT_V (Pin (p,7),b7))
+absview PDR_BIT_V (Pin,bit,bisectional)
+
+praxi {p:Pin}{b:bit} divide_pdr_bit_v {r,s:bisectional | bisectional_half_b (r,s)}
+      (PDR_BIT_V (p,b,r)) : (PDR_BIT_V (p,b,s),PDR_BIT_V (p,b,s))
+
+praxi {p:Pin}{b:bit} merge_pdr_bit_v {r,s,t:bisectional | bisectional_add_b (r,s,t)}
+      (PDR_BIT_V (p,b,r), PDR_BIT_V (p,b,s)):(PDR_BIT_V (p,b,t))
+
+
+dataview PDR_V (p:IOPort,bits) =
+    {p:IOPort}{b7,b6,b5,b4,b3,b2,b1,b0:bit}
+    PDR_V (p,Bits8 (b7,b6,b5,b4,b3,b2,b1,b0)) of
+      (PDR_BIT_V (Pin (p,7),b0,bisect1), PDR_BIT_V (Pin (p,6),b1,bisect1),
+       PDR_BIT_V (Pin (p,5),b2,bisect1), PDR_BIT_V (Pin (p,4),b3,bisect1),
+       PDR_BIT_V (Pin (p,3),b4,bisect1), PDR_BIT_V (Pin (p,2),b5,bisect1),
+       PDR_BIT_V (Pin (p,1),b6,bisect1), PDR_BIT_V (Pin (p,0),b7,bisect1))
 
 absprop PDR_PERMISSION (IOPort,bit_permissions)
 
-dataprop PDR_PERMIT (IOPort,bits) =
- | {p:IOPort}{perms:bit_permissions}{bs:bits}{v:int}
-   PDR_PERMIT (p,bs)
-    of (PDR_PERMISSION (p,perms),BITS_PERMIT_CERTIFICATE (8,perms,bs))
+propdef PDR_PERMIT (p:IOPort,bs:bits) =
+    [perms:bit_permissions]
+    (PDR_PERMISSION (p,perms),BITS_PERMIT_CERTIFICATE (8,perms,bs))
 
 fn {p:IOPort}{bs,cs:bits}{v: int}
   writePDR (PDR_PERMIT (p,cs),
             !PDR_V (p,bs) >> PDR_V (p,cs) |
-            ioport_t p,bits_uint_t (8,cs)):void
+            ioport_uint_t p,bits_uint_t (8,cs)):void
 
 fn {p:IOPort}{bs:bits}
-  readPDR (!PDR_V (p,bs) | ioport_t p)
+  readPDR (!PDR_V (p,bs) | ioport_uint_t p)
    : bits_uint_t (8,bs)
 
+fn {p:IOPort}{n:int}{b:bit}{r:bisectional}
+  readPDRbit (!PDR_BIT_V (Pin (p,n),b,r) | pin:pin_uint_t (p,n))
+   :bool (b==I)
 
 // PODR
 
 stadef PODR_BIT_HIGH   = I
 stadef PODR_BIT_GROUND = O
 
-absview PODR_BIT_V (Pin,bit)
-dataview PODR_V (IOPort,bits) =
-  {p:IOPort}{b7,b6,b5,b4,b3,b2,b1,b0:bit}
-  PODR_V (p,Bits8 (b0,b1,b2,b3,b4,b5,b6,b7)) of
-            (PODR_BIT_V (Pin (p,0),b0), PODR_BIT_V (Pin (p,1),b1),
-             PODR_BIT_V (Pin (p,2),b2), PODR_BIT_V (Pin (p,3),b3),
-             PODR_BIT_V (Pin (p,4),b4), PODR_BIT_V (Pin (p,5),b5),
-             PODR_BIT_V (Pin (p,6),b6), PODR_BIT_V (Pin (p,7),b7))
+absview PODR_BIT_V (Pin,bit,bisectional)
+
+praxi {p:Pin}{b:bit} divide_podr_bit_v {r,s:bisectional | bisectional_half_b (r,s)}
+      (PODR_BIT_V (p,b,r)) : (PODR_BIT_V (p,b,s),PODR_BIT_V (p,b,s))
+
+praxi {p:Pin}{b:bit} merge_podr_bit_v {r,s,t:bisectional | bisectional_add_b (r,s,t)}
+    (PODR_BIT_V (p,b,r), PODR_BIT_V (p,b,s)):(PODR_BIT_V (p,b,t))
+
+
+dataview PODR_V (p:IOPort,bits) =
+    {p:IOPort}{b7,b6,b5,b4,b3,b2,b1,b0:bit}
+    PODR_V (p,Bits8 (b7,b6,b5,b4,b3,b2,b1,b0)) of
+      (PODR_BIT_V (Pin (p,7),b0,bisect1), PODR_BIT_V (Pin (p,6),b1,bisect1),
+       PODR_BIT_V (Pin (p,5),b2,bisect1), PODR_BIT_V (Pin (p,4),b3,bisect1),
+       PODR_BIT_V (Pin (p,3),b4,bisect1), PODR_BIT_V (Pin (p,2),b5,bisect1),
+       PODR_BIT_V (Pin (p,1),b6,bisect1), PODR_BIT_V (Pin (p,0),b7,bisect1))
 
 absprop PODR_PERMISSION (IOPort,bit_permissions)
 
-dataprop PODR_PERMIT (IOPort,bits) =
- | {p:IOPort}{perms:bit_permissions}{bs:bits}{v:int}
-   PODR_PERMIT (p,bs)
-    of (PODR_PERMISSION (p,perms),BITS_PERMIT_CERTIFICATE (8,perms,bs))
+propdef PODR_PERMIT (p:IOPort,bs:bits) =
+    [perms:bit_permissions]
+    (PODR_PERMISSION (p,perms),BITS_PERMIT_CERTIFICATE (8,perms,bs))
 
 fn {p:IOPort}{bs,cs:bits}
   writePODR (PODR_PERMIT (p,cs),
              !PODR_V (p,bs) >> PODR_V (p,cs) |
-             ioport_t p, bits_uint_t (8,cs)):void
+             ioport_uint_t p, bits_uint_t (8,cs)):void
 
 fn {p:IOPort}{bs:bits}
-  readPODR (PODR_V (p,bs) | ioport_t p)
+  readPODR (PODR_V (p,bs) | ioport_uint_t p)
    :bits_uint_t (8,bs)
+
+fn {p:IOPort}{n:int}{b:bit}{r:bisectional}
+  readPODRbit (!PODR_BIT_V (Pin (p,n),b,r) | pin:pin_uint_t (p,n))
+   :bool (b==I)
+
+// PIDR
+
+absprop PIDR_BIT_P (Pin,bit)
+dataprop PIDR_P (p:IOPort,bits) =
+    {p:IOPort}{b7,b6,b5,b4,b3,b2,b1,b0:bit}
+    PIDR_P (p,Bits8 (b7,b6,b5,b4,b3,b2,b1,b0)) of
+      (PIDR_BIT_P (Pin (p,7),b0), PIDR_BIT_P (Pin (p,6),b1),
+       PIDR_BIT_P (Pin (p,5),b2), PIDR_BIT_P (Pin (p,4),b3),
+       PIDR_BIT_P (Pin (p,3),b4), PIDR_BIT_P (Pin (p,2),b5),
+       PIDR_BIT_P (Pin (p,1),b6), PIDR_BIT_P (Pin (p,0),b7))
+
+fn {p:IOPort} readPIDR (ioport_uint_t p)
+   :[bs:bits] (PIDR_P (p,bs) | bits_uint_t (8,bs))
 
 // GPIO
 
-viewdef GPIOView (p:Pin,writable:bit,out:bit) =
-  (PMR_BIT_V (p, O), PDR_BIT_V (p, writable), PODR_BIT_V (p, out))
+viewdef PinOutputView (p:Pin,output:bit) =
+  [isel:bit][s,r,t:bisectional]
+  (PFS_V (p,Bits8 (O,isel,O,O,O,O,O,O)),
+   PMR_BIT_V (p,O,s),PDR_BIT_V (p,I,r),PODR_BIT_V (p,output,t))
 
-stadef P0 (n:int):Pin = Pin (Port0,n)
-stadef P1 (n:int):Pin = Pin (Port1,n)
-stadef P2 (n:int):Pin = Pin (Port2,n)
-stadef P3 (n:int):Pin = Pin (Port3,n)
-stadef P4 (n:int):Pin = Pin (Port4,n)
-stadef P5 (n:int):Pin = Pin (Port5,n)
-stadef P6 (n:int):Pin = Pin (Port6,n)
-stadef P7 (n:int):Pin = Pin (Port7,n)
-stadef P8 (n:int):Pin = Pin (Port8,n)
-stadef P9 (n:int):Pin = Pin (Port9,n)
-stadef PA (n:int):Pin = Pin (PortA,n)
-stadef PB (n:int):Pin = Pin (PortB,n)
-stadef PC (n:int):Pin = Pin (PortC,n)
-stadef PD (n:int):Pin = Pin (PortD,n)
-stadef PE (n:int):Pin = Pin (PortE,n)
-stadef PF (n:int):Pin = Pin (PortF,n)
-stadef PG (n:int):Pin = Pin (PortG,n)
-stadef PH (n:int):Pin = Pin (PortH,n)
-stadef PI (n:int):Pin = Pin (PortI,n)
-stadef PJ (n:int):Pin = Pin (PortJ,n)
 
-// TODO 出力電圧やオープンドレインなどの設定を表す観を作る。
-// TODO linタグを復活させる。
+absprop PinInput (Pin,bit)
+
+fn readPinInput {p:IOPort}{n:int}{isel:bit}{s,r:bisectional}
+   (PFS_V (Pin (p,n),Bits8 (O,isel,O,O,O,O,O,O)),
+   !PMR_BIT_V (Pin (p,n),O,s),!PDR_BIT_V (Pin (p,n),O,r) | pin_uint_t (p,n))
+   : [input:bit] (PinInput (Pin (p,n),input) | bool (input==I))
+
+////
+
+// TODO Make a view expressing the setting of output voltage and open drain etc.
 (*
 fn getInitialPinViews () : //<lin>
     (GPIOView (P0 0,O,I),
@@ -205,33 +293,7 @@ fn getInitialPinViews () : //<lin>
      | void)
 *)
 
-fn {p:IOPort}{n:int}{rw,outv,before_rw:bit} configIOPin
-   (!GPIOView (Pin (p,n),before_rw,outv) >> GPIOView (Pin (p,n),rw,outv)
-   | pin:pin_t (p,n), rw:bit_uint_t rw)
-   : void
-
-fn {p:IOPort}{n:int}{outv,before_out:bit} putIO
-   (!GPIOView (Pin (p,n),I,before_out) >> GPIOView (Pin (p,n),I,outv)
-   | pin:pin_t (p,n), bit_uint_t outv)
-   : void
-
-fn {p:IOPort}{n:int}{rw,outv:bit} readIO
-   (!GPIOView (Pin (p,n),rw,outv) | pin:pin_t (p,n))
-   : bit_uint_t outv
-
-(*
- 起動からの出力履歴を型に含ませる。
-  後から含ませることはできる？
-   別のスタンプ化した型を作って、関係する関数に型を追加すれば良い？
-    それでも手間が多い？
-     すべてのPinViewに追加するよりはマシ？
-   追加するには、起動からの時間を管理する仕組みが必要
-    取り敢えず面倒くさいから諦める。
-  周辺機器に設定すると履歴が取れなくなる？
-   周辺機器に設定したことを履歴に残しておけば良い。
-*)
-
-// TODO パッケージ毎の差異に対応するための初期absprop
+// TODO make initial absprops.
 ////
 fn rx110_64pins_initial_views ():<lin> (
     PODR_PERMISSION (Port0,BitPermissions8 (Permit,Permit,Permit,Permit,Permit,Permit,Permit,Permit)),
@@ -239,7 +301,4 @@ fn rx110_64pins_initial_views ():<lin> (
     
 )
 
-//
-// 実装
-//
 
