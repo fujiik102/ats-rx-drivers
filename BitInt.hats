@@ -23,7 +23,15 @@ prfun pow2_total {n:nat} .<n>. ():[npow:int] POW2 (n,npow) =
   sif 0 < n then POW2_N (pow2_total {n-1} ())
             else POW2_0 ()
 
-extern praxi pow2_domain_nat {n,npow:int} (POW2 (n,npow)):[0 <= n] void
+extern praxi pow2_0_domain_nat {n:int} (POW2 (n,0)):[0 <= n] void
+prfun pow2_not_0_domain_nat {n,npow:int | npow != 0} .<abs npow>. (npow2:POW2 (n,npow)):[0 <= n] void
+ = sif 0 <= n then ()
+   else case+ npow2 of
+       | POW2_0 () =/=> ()
+       | POW2_N (n'pow) =/=> let prval () = pow2_not_0_domain_nat (n'pow) in end  
+
+prfn {n,npow:int} pow2_domain_nat (pow2:POW2 (n,npow)):[0 <= n] void
+ = sif 0 !=   npow then pow2_not_0_domain_nat (pow2) else pow2_0_domain_nat(pow2)
 
 prfun pow2_range_lte_1 {n:nat}{npow:int} .<n>. (pow:POW2 (n,npow)):[1 <= npow] void
  = case+ pow of

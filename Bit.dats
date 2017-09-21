@@ -26,6 +26,13 @@ staload "Bit.sats"
 
 implement main0 () = () // a dummy implementation for [main]
 
+//prfun bitslen_nat {n:int}{bs:bits} (BITSLEN (bs,n)):[0 <= n] void
+primplement bitslen_nat {n}{bs} (bslen)
+ = case+ bslen of
+   | BITSLENNIL () => ()
+   | BITSLENCONS (bs'len) => sif 0 < n then bitslen_nat (bs'len)
+     else let prval () = bitslen_nat (bs'len) in end
+
 
 prfn {n:int} le_refl   ():[n <= n]     void = ()
 
@@ -925,4 +932,5 @@ implement {n}{bs} bits_uint_not (v)
      prval [cs] cs_eq_r = nat_eq_bits {n,npow,r}(pow2)
      prval bs_lnot = $UN.proof_assert {BITS_NOT (bs,cs)}()
    in (bs_lnot | (cs_eq_r | uint_r)) end
+
 

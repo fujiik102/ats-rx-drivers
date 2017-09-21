@@ -15,7 +15,7 @@ dataprop BITSLEN (bits,int) =
  | {n:int}{b:bit}{bs:bits}
    BITSLENCONS (BitsCons (bs,b),n+1) of BITSLEN (bs,n)
 
-praxi bitslen_nat {n:int}{bs:bits} (BITSLEN (bs,n)):[0 <= n] void
+prfun bitslen_nat {n:int}{bs:bits} (BITSLEN (bs,n)):[0 <= n] void
 
 dataprop BITEQINT (bit, int) =
  | B0EQ0 (O, 0) of ()
@@ -67,7 +67,6 @@ dataprop POW2 (int,int) =
  | POW2_0 (0,1) of ()
  | {n,v:int} POW2_N (n+1,v+v) of POW2 (n,v)
 
-praxi pow2_domain_nat {n,npow:int} (POW2 (n,npow)):[0 <= n] void
 
 prfn beqint_is_nat {n,v:int}{bs:bits}
   (beqint_fst:BITSEQINT (n,bs,v)):[0 <= v] void
