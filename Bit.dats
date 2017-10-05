@@ -182,6 +182,43 @@ primplement chgbit_test5 {bs,cs}(bseq0,cseq128)
                       CHANGE_BIT_BITS_ind (CHANGE_BIT_BITS_ind (CHANGE_BIT_BITS_ind (
                       CHANGE_BIT_BITS_ind (CHANGE_BIT_BITS_bas (BITSLENNIL)))))))) end end end
 
+
+(*
+prfun chgbit_bnum_nat {n,bnum:int}{b:bit}{bs,cs:bits}
+      (CHANGE_BIT_BITS (n,bs,bnum,b,cs)):[0 <= bnum] void
+*)
+primplement chgbit_bnum_nat {n,bnum}{b}{bs,cs} (chgbit)
+ = case+ chgbit of
+   | CHANGE_BIT_BITS_bas (bs'len) => bitslen_nat (bs'len)
+   | CHANGE_BIT_BITS_ind (chgbit') => sif 0 <= bnum then () else let
+       prval () = chgbit_bnum_nat (chgbit')
+     in end
+
+(*
+prfun chgbit_bits_injective {n,bnum:int}{b:bit}{bs,cs,ds:bits}
+      (CHANGE_BIT_BITS (n,bs,bnum,b,cs),
+       CHANGE_BIT_BITS (n,bs,bnum,b,ds))
+      :[cs == ds] void
+*)
+primplement chgbit_bits_injective {n,bnum}{b}{bs,cs,ds} (chgbit1,chgbit2)
+ = case+ (chgbit1,chgbit2) of
+   | (CHANGE_BIT_BITS_bas {n'1}{b1,c1}{bs'1}(bs'len1),
+      CHANGE_BIT_BITS_bas {n'2}{b2,c2}{bs'2}(bs'len2)) => bits_eq_refl {cs}()
+   | (CHANGE_BIT_BITS_ind {n'1,bn'1}{b1,c1}{bs'1,cs'}(chgbit1'),
+      CHANGE_BIT_BITS_ind {n'2,bn'2}{b2,c2}{bs'2,ds'}(chgbit2')) => let
+        prval () = chgbit_bits_injective (chgbit1',chgbit2')
+        prval EQBITS () = eqbits_make {cs',ds'}()
+        prval () = bits_eq_refl {cs}()
+      in end
+   | (CHANGE_BIT_BITS_bas (bs'len1),
+      CHANGE_BIT_BITS_ind (chgbit2')) =/=> let
+        prval () = chgbit_bnum_nat (chgbit2')
+      in end
+   | (CHANGE_BIT_BITS_ind (chgbit1'),
+      CHANGE_BIT_BITS_bas (bs'len2)) =/=>  let
+        prval () = chgbit_bnum_nat (chgbit1')
+      in end
+
 primplement tstbit_test1 () = let
 		prval () = bit_eq_refl {I}()
   in TEST_BIT_BITS_bas {0}{I}{BitsNil}(BITSLENNIL) end

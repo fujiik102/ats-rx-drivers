@@ -23,11 +23,11 @@ stadef IOPort2int (p:IOPort):int =
   ifint (p==PortI,18, ifint (p==PortJ,19,
   ~1))))))))))))))))))))
 
-typedef ioport_uint_t (p:IOPort) = uint (IOPort2int p)
+typedef ioport_t (p:IOPort) = int (IOPort2int p)
 
 datasort Pin = Pin of (IOPort,int)
 
-typedef pin_uint_t (p:IOPort,n:int) = @(ioport_uint_t p, uint n)
+typedef pin_t (p:IOPort,n:int) = @(ioport_t p, uint n)
 
 
 stadef P0 (n:int):Pin = Pin (Port0,n)
@@ -90,10 +90,10 @@ stadef PMR_BIT_PERIPHERAL = I
 dataview PMR_V (IOPort,bits) =
     {p:IOPort}{b7,b6,b5,b4,b3,b2,b1,b0:bit}
     PMR_V (p,Bits8 (b7,b6,b5,b4,b3,b2,b1,b0)) of
-      (PMR_BIT_V (Pin (p,7),b0,bisect1), PMR_BIT_V (Pin (p,6),b1,bisect1),
-       PMR_BIT_V (Pin (p,5),b2,bisect1), PMR_BIT_V (Pin (p,4),b3,bisect1),
-       PMR_BIT_V (Pin (p,3),b4,bisect1), PMR_BIT_V (Pin (p,2),b5,bisect1),
-       PMR_BIT_V (Pin (p,1),b6,bisect1), PMR_BIT_V (Pin (p,0),b7,bisect1))
+      (PMR_BIT_V (Pin (p,7),b7,bisect1), PMR_BIT_V (Pin (p,6),b6,bisect1),
+       PMR_BIT_V (Pin (p,5),b5,bisect1), PMR_BIT_V (Pin (p,4),b4,bisect1),
+       PMR_BIT_V (Pin (p,3),b3,bisect1), PMR_BIT_V (Pin (p,2),b2,bisect1),
+       PMR_BIT_V (Pin (p,1),b1,bisect1), PMR_BIT_V (Pin (p,0),b0,bisect1))
 
 absprop PMR_PERMISSION (IOPort,bit_permissions)
 
@@ -102,23 +102,43 @@ propdef PMR_PERMIT (p:IOPort,bs:bits) =
     (PMR_PERMISSION (p,perms),BITS_PERMIT_CERTIFICATE (8,perms,bs))
 
 fn {bs,cs:bits}{p:IOPort}
-  writePMR (PMR_V (p,bs), PMR_PERMIT (p,cs) | ioport_uint_t p, bits_uint_t (8,cs))
-   :(PMR_V (p,cs) | void)
+  writePMR (!PMR_V (p,bs) >> PMR_V (p,cs),
+             PMR_PERMIT (p,cs)
+           | ioport_t p,bits_uint_t (8,cs))
+   :<!wrt> void
 
 fn {bs,cs:bits}{p:IOPort}{b:bit}
   changePMRBit {bn:int | bn < 8}
     (CHANGE_BIT_BITS (8,bs,bn,b,cs),
      !PMR_V (p,bs) >> PMR_V (p,cs),
      PMR_PERMIT (p,cs)
-    | pin_uint_t (p,bn), bit_uint_t b):void
+    | pin_t (p,bn), bit_uint_t b):<!refwrt> void
 
 fn {bs:bits}{p:IOPort}
-  readPMR (!PMR_V (p,bs) | p:ioport_uint_t p)
-   :bits_uint_t (8,bs)
+  readPMR (!PMR_V (p,bs) | p:ioport_t p)
+   :<!ref> bits_uint_t (8,bs)
 
-fn {p:IOPort}{n:int}{b:bit}{r:bisectional}
-  readPMRbit (!PMR_BIT_V (Pin (p,n),b,r) | pin:pin_uint_t (p,n))
-   :bool (b==I)
+fn pmr2pmr_bits {p:IOPort}{b7,b6,b5,b4,b3,b2,b1,b0:bit}{v:int}
+   (PMR_V (p,Bits8 (b7,b6,b5,b4,b3,b2,b1,b0)) | bits_uint_t (8,Bits8 (b7,b6,b5,b4,b3,b2,b1,b0)))
+   :(PMR_BIT_V (Pin (p,7),b7,bisect1),
+     PMR_BIT_V (Pin (p,6),b6,bisect1),
+     PMR_BIT_V (Pin (p,5),b5,bisect1),
+     PMR_BIT_V (Pin (p,4),b4,bisect1),
+     PMR_BIT_V (Pin (p,3),b3,bisect1),
+     PMR_BIT_V (Pin (p,2),b2,bisect1),
+     PMR_BIT_V (Pin (p,1),b1,bisect1),
+     PMR_BIT_V (Pin (p,0),b0,bisect1),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),0,b0),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),1,b1),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),2,b2),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),3,b3),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),4,b4),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),5,b5),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),6,b6),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),7,b7)
+    | @(bool (b7 == I),bool (b6 == I),bool (b5 == I),bool (b4 == I),
+        bool (b3 == I),bool (b2 == I),bool (b1 == I),bool (b0 == I)))
+
 
 // The PFS function is postponed.
 // Define only PFS_V so that other functions can acquire the state of the initial value
@@ -152,7 +172,7 @@ fn {p:IOPort}{pnum:int}
     !PFS_V (Pin (p,pnum),Bits8 (asel,isel,O,psel4,psel3,psel2,psel1,psel0)) >>
      PFS_V (Pin (p,pnum),Bits8 (O,O,O,O,O,O,O,O)),
     !PMR_BIT_V (Pin (p,pnum), O)
-  | pin_uint_t (p,pnum),
+  | pin_t (p,pnum),
     bits8int_t (O,O,O,O,O,O,O,O)
   )
   :void
@@ -160,7 +180,7 @@ fn {p:IOPort}{pnum:int}
 fn {p:IOPort}{pnum:int}{asel,isel,psel4,psel3,psel2,psel1,psel0:bit}
   readPFS (
     !PFS_V (Pin (p,pnum),Bits8 (asel,isel,O,psel4,psel3,psel2,psel1,psel0))
-  | pin_uint_t (p, pnum)
+  | pin_t (p, pnum)
   )
   :bits8int_t (asel,isel,O,psel4,psel3,psel2,psel1,psel0)
 *)
@@ -187,10 +207,10 @@ praxi {p:Pin}{b:bit} merge_pdr_bit_v {r,s,t:bisectional | bisectional_add_b (r,s
 dataview PDR_V (p:IOPort,bits) =
     {p:IOPort}{b7,b6,b5,b4,b3,b2,b1,b0:bit}
     PDR_V (p,Bits8 (b7,b6,b5,b4,b3,b2,b1,b0)) of
-      (PDR_BIT_V (Pin (p,7),b0,bisect1), PDR_BIT_V (Pin (p,6),b1,bisect1),
-       PDR_BIT_V (Pin (p,5),b2,bisect1), PDR_BIT_V (Pin (p,4),b3,bisect1),
-       PDR_BIT_V (Pin (p,3),b4,bisect1), PDR_BIT_V (Pin (p,2),b5,bisect1),
-       PDR_BIT_V (Pin (p,1),b6,bisect1), PDR_BIT_V (Pin (p,0),b7,bisect1))
+      (PDR_BIT_V (Pin (p,7),b7,bisect1), PDR_BIT_V (Pin (p,6),b6,bisect1),
+       PDR_BIT_V (Pin (p,5),b5,bisect1), PDR_BIT_V (Pin (p,4),b4,bisect1),
+       PDR_BIT_V (Pin (p,3),b3,bisect1), PDR_BIT_V (Pin (p,2),b2,bisect1),
+       PDR_BIT_V (Pin (p,1),b1,bisect1), PDR_BIT_V (Pin (p,0),b0,bisect1))
 
 absprop PDR_PERMISSION (IOPort,bit_permissions)
 
@@ -199,17 +219,21 @@ propdef PDR_PERMIT (p:IOPort,bs:bits) =
     (PDR_PERMISSION (p,perms),BITS_PERMIT_CERTIFICATE (8,perms,bs))
 
 fn {p:IOPort}{bs,cs:bits}{v: int}
-  writePDR (PDR_PERMIT (p,cs),
-            !PDR_V (p,bs) >> PDR_V (p,cs) |
-            ioport_uint_t p,bits_uint_t (8,cs)):void
+  writePDR (!PDR_V (p,bs) >> PDR_V (p,cs),
+             PDR_PERMIT (p,cs)
+           | ioport_t p,bits_uint_t (8,cs)):<!wrt> void
+
+fn {bs,cs:bits}{p:IOPort}{b:bit}
+  changePDRBit {bn:int | bn < 8}
+    (CHANGE_BIT_BITS (8,bs,bn,b,cs),
+     !PDR_V (p,bs) >> PDR_V (p,cs),
+     PDR_PERMIT (p,cs)
+    | pin_t (p,bn), bit_uint_t b):<!refwrt> void
 
 fn {p:IOPort}{bs:bits}
-  readPDR (!PDR_V (p,bs) | ioport_uint_t p)
-   : bits_uint_t (8,bs)
+  readPDR (!PDR_V (p,bs) | ioport_t p)
+   :<!ref> bits_uint_t (8,bs)
 
-fn {p:IOPort}{n:int}{b:bit}{r:bisectional}
-  readPDRbit (!PDR_BIT_V (Pin (p,n),b,r) | pin:pin_uint_t (p,n))
-   :bool (b==I)
 
 // PODR
 
@@ -228,10 +252,10 @@ praxi {p:Pin}{b:bit} merge_podr_bit_v {r,s,t:bisectional | bisectional_add_b (r,
 dataview PODR_V (p:IOPort,bits) =
     {p:IOPort}{b7,b6,b5,b4,b3,b2,b1,b0:bit}
     PODR_V (p,Bits8 (b7,b6,b5,b4,b3,b2,b1,b0)) of
-      (PODR_BIT_V (Pin (p,7),b0,bisect1), PODR_BIT_V (Pin (p,6),b1,bisect1),
-       PODR_BIT_V (Pin (p,5),b2,bisect1), PODR_BIT_V (Pin (p,4),b3,bisect1),
-       PODR_BIT_V (Pin (p,3),b4,bisect1), PODR_BIT_V (Pin (p,2),b5,bisect1),
-       PODR_BIT_V (Pin (p,1),b6,bisect1), PODR_BIT_V (Pin (p,0),b7,bisect1))
+      (PODR_BIT_V (Pin (p,7),b7,bisect1), PODR_BIT_V (Pin (p,6),b6,bisect1),
+       PODR_BIT_V (Pin (p,5),b5,bisect1), PODR_BIT_V (Pin (p,4),b4,bisect1),
+       PODR_BIT_V (Pin (p,3),b3,bisect1), PODR_BIT_V (Pin (p,2),b2,bisect1),
+       PODR_BIT_V (Pin (p,1),b1,bisect1), PODR_BIT_V (Pin (p,0),b0,bisect1))
 
 absprop PODR_PERMISSION (IOPort,bit_permissions)
 
@@ -240,17 +264,24 @@ propdef PODR_PERMIT (p:IOPort,bs:bits) =
     (PODR_PERMISSION (p,perms),BITS_PERMIT_CERTIFICATE (8,perms,bs))
 
 fn {p:IOPort}{bs,cs:bits}
-  writePODR (PODR_PERMIT (p,cs),
-             !PODR_V (p,bs) >> PODR_V (p,cs) |
-             ioport_uint_t p, bits_uint_t (8,cs)):void
+  writePODR (!PODR_V (p,bs) >> PODR_V (p,cs),
+              PODR_PERMIT (p,cs)
+            | ioport_t p, bits_uint_t (8,cs)):<!wrt> void
+
+fn {bs,cs:bits}{p:IOPort}{b:bit}
+  changePODRBit {bn:int | bn < 8}
+    (CHANGE_BIT_BITS (8,bs,bn,b,cs),
+     !PODR_V (p,bs) >> PODR_V (p,cs),
+     PODR_PERMIT (p,cs)
+    | pin_t (p,bn), bit_uint_t b):<!refwrt> void
 
 fn {p:IOPort}{bs:bits}
-  readPODR (PODR_V (p,bs) | ioport_uint_t p)
-   :bits_uint_t (8,bs)
+  readPODR (!PODR_V (p,bs) | ioport_t p)
+   :<!ref> bits_uint_t (8,bs)
 
 fn {p:IOPort}{n:int}{b:bit}{r:bisectional}
-  readPODRbit (!PODR_BIT_V (Pin (p,n),b,r) | pin:pin_uint_t (p,n))
-   :bool (b==I)
+  readPODRbit (!PODR_BIT_V (Pin (p,n),b,r) | pin:pin_t (p,n))
+   :<!ref> bool (b==I)
 
 // PIDR
 
@@ -258,13 +289,13 @@ absprop PIDR_BIT_P (Pin,bit)
 dataprop PIDR_P (p:IOPort,bits) =
     {p:IOPort}{b7,b6,b5,b4,b3,b2,b1,b0:bit}
     PIDR_P (p,Bits8 (b7,b6,b5,b4,b3,b2,b1,b0)) of
-      (PIDR_BIT_P (Pin (p,7),b0), PIDR_BIT_P (Pin (p,6),b1),
-       PIDR_BIT_P (Pin (p,5),b2), PIDR_BIT_P (Pin (p,4),b3),
-       PIDR_BIT_P (Pin (p,3),b4), PIDR_BIT_P (Pin (p,2),b5),
-       PIDR_BIT_P (Pin (p,1),b6), PIDR_BIT_P (Pin (p,0),b7))
+      (PIDR_BIT_P (Pin (p,7),b7), PIDR_BIT_P (Pin (p,6),b6),
+       PIDR_BIT_P (Pin (p,5),b5), PIDR_BIT_P (Pin (p,4),b4),
+       PIDR_BIT_P (Pin (p,3),b3), PIDR_BIT_P (Pin (p,2),b2),
+       PIDR_BIT_P (Pin (p,1),b1), PIDR_BIT_P (Pin (p,0),b0))
 
-fn {p:IOPort} readPIDR (ioport_uint_t p)
-   :[bs:bits] (PIDR_P (p,bs) | bits_uint_t (8,bs))
+fn {p:IOPort} readPIDR (ioport_t p)
+   :<!ref> [bs:bits] (PIDR_P (p,bs) | bits_uint_t (8,bs))
 
 // GPIO
 
@@ -277,9 +308,9 @@ viewdef PinOutputView (p:Pin,output:bit) =
 absprop PinInput (Pin,bit)
 
 fn readPinInput {p:IOPort}{n:int}{isel:bit}{s,r:bisectional}
-   (PFS_V (Pin (p,n),Bits8 (O,isel,O,O,O,O,O,O)),
-   !PMR_BIT_V (Pin (p,n),O,s),!PDR_BIT_V (Pin (p,n),O,r) | pin_uint_t (p,n))
-   : [input:bit] (PinInput (Pin (p,n),input) | bool (input==I))
+   (!PFS_V (Pin (p,n),Bits8 (O,isel,O,O,O,O,O,O)),
+   !PMR_BIT_V (Pin (p,n),O,s),!PDR_BIT_V (Pin (p,n),O,r) | pin_t (p,n))
+   :<!ref> [input:bit] (PinInput (Pin (p,n),input) | bool (input==I))
 
 ////
 

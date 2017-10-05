@@ -24,11 +24,28 @@ prfun pow2_total {n:nat} .<n>. ():[npow:int] POW2 (n,npow) =
             else POW2_0 ()
 
 extern praxi pow2_0_domain_nat {n:int} (POW2 (n,0)):[0 <= n] void
-prfun pow2_not_0_domain_nat {n,npow:int | npow != 0} .<abs npow>. (npow2:POW2 (n,npow)):[0 <= n] void
+prfun pow2_not_0_domain_nat {n,npow:int | npow != 0} .<abs npow>.
+                            (npow2:POW2 (n,npow)):[0 <= n] void
  = sif 0 <= n then ()
    else case+ npow2 of
        | POW2_0 () =/=> ()
        | POW2_N (n'pow) =/=> let prval () = pow2_not_0_domain_nat (n'pow) in end  
+
+(*
+prfun pow2_unique_lemma {n:nat}{npow1,npow2:int} .<n>.
+      (pow1:POW2 (n,npow1),pow2:POW2 (n,npow2)) : [npow1==npow2] void
+ = case+ (pow1,pow2) of
+   | (POW2_0 (),POW2_0 ()) => ()
+   | (POW2_N (pow1'),POW2_N (pow2')) =>
+     sif 0 < n then pow2_unique_lemma (pow1',pow2')
+     else let in sif 0 != npow1 then let
+       prval () = pow2_not_0_domain_nat (pow1')
+     in end else let in sif 0 != npow2 then let
+       prval () = pow2_not_0_domain_nat (pow2')
+     in end else () end end
+   | (POW2_N (pow1'),POW2_0 ()) =/=> ()
+   | (POW2_0 (),POW2_N (pow2')) =/=> ()
+*)
 
 prfn {n,npow:int} pow2_domain_nat (pow2:POW2 (n,npow)):[0 <= n] void
  = sif 0 !=   npow then pow2_not_0_domain_nat (pow2) else pow2_0_domain_nat(pow2)

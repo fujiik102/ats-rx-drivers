@@ -90,11 +90,28 @@ prfun chgbit_test4 {bs,cs:bits}(BITSEQINT (8,bs,0),BITSEQINT (8,cs,1)):
 prfun chgbit_test5 {bs,cs:bits}(BITSEQINT (8,bs,0),BITSEQINT (8,cs,128)):
                    CHANGE_BIT_BITS (8,bs,7,I,cs)
 
+prfun chgbit_bnum_nat {n,bnum:int}{b:bit}{bs,cs:bits}
+      (CHANGE_BIT_BITS (n,bs,bnum,b,cs)):[0 <= bnum] void
+
+prfun chgbit_bits_injective {n,bnum:int}{b:bit}{bs,cs,ds:bits}
+      (CHANGE_BIT_BITS (n,bs,bnum,b,cs),
+       CHANGE_BIT_BITS (n,bs,bnum,b,ds))
+      :[cs == ds] void
+
+(*
+stacst test_bit_bits_b : (bits,int,bit) -> bool
+praxi 
+*)
+
 dataprop TEST_BIT_BITS (bits,int,bit) =
  | {bn:int}{b:bit}{bs:bits} TEST_BIT_BITS_bas (BitsCons (bs,b),0,b)
      of (BITSLEN (bs,bn))
  | {b,c:bit}{bs:bits}{bn:int}
    TEST_BIT_BITS_ind (BitsCons (bs,c),bn+1,b) of TEST_BIT_BITS (bs,bn,b)
+
+praxi testbit_buttombit {bs:bits}{b,c:bit}
+      (TEST_BIT_BITS (BitsCons (bs,b),0,c)):[b==c] void
+
 
 prfun tstbit_test1 (): TEST_BIT_BITS (BitsCons (BitsNil,I),0,I)
 prfun tstbit_test2 (): TEST_BIT_BITS (BitsCons (BitsNil,O),0,O)
@@ -108,19 +125,19 @@ prfun tstbit_test8 {bs:bits}(BITSEQINT (8,bs,127)):TEST_BIT_BITS (bs,7,O)
 
 fn {b:bit}{bs:bits}
   changeBitBits {n,bn:nat | bn < n; n < INTBITS} (bits_uint_t (n,bs),uint bn,bit_uint_t b)
-  : [bs':bits] (CHANGE_BIT_BITS (n,bs,bn,b,bs') | bits_uint_t (n,bs'))
+  :<> [bs':bits] (CHANGE_BIT_BITS (n,bs,bn,b,bs') | bits_uint_t (n,bs'))
 
 fn {bs:bits}
   setBitBits {n,bn:nat | bn < n; n < INTBITS} (bits_uint_t (n,bs),uint bn)
-  : [cs:bits] (CHANGE_BIT_BITS (n,bs,bn,I,cs) | bits_uint_t (n,cs))
+  :<> [cs:bits] (CHANGE_BIT_BITS (n,bs,bn,I,cs) | bits_uint_t (n,cs))
 
 fn {bs:bits}
   clearBitBits {n,bn:nat | bn < n; n < INTBITS} (bits_uint_t (n,bs),uint bn)
-  : [bs':bits] (CHANGE_BIT_BITS (n,bs,bn,O,bs') | bits_uint_t (n,bs'))
+  :<> [bs':bits] (CHANGE_BIT_BITS (n,bs,bn,O,bs') | bits_uint_t (n,bs'))
 
 fn {bs:bits}
   testBitBits {n,bn:nat | bn < n}{n < INTBITS} (bits_uint_t (n,bs),uint bn)
-  : [b:bit] (TEST_BIT_BITS (bs,bn,b) | bool (b==I))
+  :<> [b:bit] (TEST_BIT_BITS (bs,bn,b) | bool (b==I))
 
 dataprop BIT_LOR (bit,bit,bit) =
  | BIT_LOR_II (I,I,I) of ()
@@ -134,8 +151,8 @@ dataprop BITS_LOR (bits,bits,bits) =
    BITS_LOR_CONS (BitsCons (bs,b),BitsCons (cs,c),BitsCons (ds,d))
     of (BIT_LOR (b,c,d), BITS_LOR (bs,cs,ds))
 
-fn {n:int}{bs,cs:bits} bits_uint_lor (n:bits_uint_t (n,bs),m:bits_uint_t (n,cs)):
-   [ds:bits] (BITS_LOR (bs,cs,ds) | bits_uint_t (n,ds))
+fn {n:int}{bs,cs:bits} bits_uint_lor (n:bits_uint_t (n,bs),m:bits_uint_t (n,cs))
+   :<> [ds:bits] (BITS_LOR (bs,cs,ds) | bits_uint_t (n,ds))
 
 
 dataprop BIT_LAND (bit,bit,bit) =
@@ -150,8 +167,8 @@ dataprop BITS_LAND (bits,bits,bits) =
    BITS_LAND_CONS (BitsCons (bs,b),BitsCons (cs,c),BitsCons (ds,d))
     of (BIT_LAND (b,c,d), BITS_LAND (bs,cs,ds))
 
-fn {n:int}{bs,cs:bits} bits_uint_land (n:bits_uint_t (n,bs),m:bits_uint_t (n,cs)):
-   [ds:bits] (BITS_LAND (bs,cs,ds) | bits_uint_t (n,ds))
+fn {n:int}{bs,cs:bits} bits_uint_land (n:bits_uint_t (n,bs),m:bits_uint_t (n,cs))
+   :<> [ds:bits] (BITS_LAND (bs,cs,ds) | bits_uint_t (n,ds))
 
 
 dataprop SINGLE_BIT_BITS (int,int,bits) =
@@ -170,8 +187,8 @@ prfun singlebit_test7 {bs:bits}(SINGLE_BIT_BITS (8,0,bs)):BITSEQINT (8,bs,1)
 prfun singlebit_test8 {bs:bits}(SINGLE_BIT_BITS (8,7,bs)):BITSEQINT (8,bs,128)
 
 // 1 << bn
-fn {n,bn:int} make_single_bit {bn < n}{n <= INTBITS}(bn:uint bn):
-  [bs:bits] (SINGLE_BIT_BITS (n,bn,bs) | bits_uint_t (n,bs))
+fn {n,bn:int} make_single_bit {bn < n}{n <= INTBITS}(bn:uint bn)
+  :<> [bs:bits] (SINGLE_BIT_BITS (n,bn,bs) | bits_uint_t (n,bs))
 
 
 dataprop BIT_NOT (bit,bit) =
@@ -190,8 +207,8 @@ stadef != = neq_bit_bit
 praxi bit_not_I_eq_O ():[I != O] void
 praxi bit_not_eq_comm {b,c:bit | b != c} ():[c != b] void
 
-fn {n:int}{bs:bits} bits_uint_not (n:bits_uint_t (n,bs)):
-   [cs:bits] (BITS_NOT (bs,cs) | bits_uint_t (n,cs))
+fn {n:int}{bs:bits} bits_uint_not (n:bits_uint_t (n,bs))
+   :<> [cs:bits] (BITS_NOT (bs,cs) | bits_uint_t (n,cs))
 
 
 
