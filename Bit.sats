@@ -21,6 +21,13 @@ dataprop BITEQINT (bit, int) =
  | B0EQ0 (O, 0) of ()
  | B1EQ1 (I, 1) of ()
 
+stacst BITEQINT_b : (bit, int) -> bool
+praxi B0EQ0_b (): [BITEQINT_b (O,0)] void
+praxi B1EQ1_b (): [BITEQINT_b (I,1)] void
+
+prfun {b:bit}{n:int} biteqint__biteqint_b (BITEQINT (b,n)): [BITEQINT_b (b,n)] void
+praxi {b:bit}{n:int} biteqint_b__biteqint {BITEQINT_b (b,n)} (): BITEQINT (b,n)
+
 typedef bit_uint_t (b:bit) = [v:int] (BITEQINT (b,v) | uint v)
 
 dataprop BITSEQINT (int, bits, int) =
@@ -28,6 +35,18 @@ dataprop BITSEQINT (int, bits, int) =
  | {n:int}{b:bit}{bs:bits}{v,bitv:int | v <= INTMAX_HALF}
    BEQCONS (n+1,BitsCons (bs,b),v+v+bitv)
    of (BITSEQINT (n,bs,v),BITEQINT (b,bitv))
+
+stacst BITSEQINT_b : (int, bits, int) -> bool
+praxi BEQNIL_b (): [BITSEQINT_b (0,BitsNil,0)] void
+praxi {n:int}{b:bit}{bs:bits}{v,bitv:int}
+      BEQCONS_b {v <= INTMAX_HALF}{BITSEQINT_b (n,bs,v)}{BITEQINT_b (b,bitv)}():
+                [BITSEQINT_b (n+1,BitsCons (bs,b),v+v+bitv)] void
+
+prfun {bs:bits}{n,v:int} bitseqint__bitseqint_b (BITSEQINT (n,bs,v)):
+      [BITSEQINT_b (n,bs,v)] void
+praxi {bs:bits}{n,v:int} bitseqint_b__bitseqint {BITSEQINT_b (n,bs,v)} ():
+      BITSEQINT (n,bs,v)
+
 
 typedef bits_uint_t (n:int,bs:bits) =
   [v:int] (BITSEQINT (n,bs,v) | uint v)
@@ -97,11 +116,6 @@ prfun chgbit_bits_injective {n,bnum:int}{b:bit}{bs,cs,ds:bits}
       (CHANGE_BIT_BITS (n,bs,bnum,b,cs),
        CHANGE_BIT_BITS (n,bs,bnum,b,ds))
       :[cs == ds] void
-
-(*
-stacst test_bit_bits_b : (bits,int,bit) -> bool
-praxi 
-*)
 
 dataprop TEST_BIT_BITS (bits,int,bit) =
  | {bn:int}{b:bit}{bs:bits} TEST_BIT_BITS_bas (BitsCons (bs,b),0,b)
@@ -240,63 +254,97 @@ dataprop BITS_PERMIT_CERTIFICATE (int,bit_permissions,bits) =
    BITPERMCERTS_CONS (n+1,BitPermsCons (ps,p),BitsCons (bs,b))
     of (BITS_PERMIT_CERTIFICATE (n,ps,bs),BIT_PERMIT_CERTIFICATE (p,b))
 
-prfn bitspermcert_0 {bs:bits}(
+prfn bitspermcert_test_0 {bs:bits}(
     BITS_PERMIT_CERTIFICATE (8,BitPermissions8 (
         Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit,
         Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit),
       bs))
     : [bs == Bits8 (O,O,O,O,O,O,O,O)] void
 
-prfn bitspermcert_1 {bs:bits}(
+prfn bitspermcert_test_1 {bs:bits}(
     BITS_PERMIT_CERTIFICATE (8,BitPermissions8 (
         Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit,
         Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Prohibit,Permit),
       bs))
     : [bs == Bits8 (O,O,O,O,O,O,O,I)] void
 
-prfn bitspermcert_2 {bs:bits}(
+prfn bitspermcert_test_2 {bs:bits}(
     BITS_PERMIT_CERTIFICATE (8,BitPermissions8 (
         Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit,
         Permit,Prohibit, Permit,Prohibit, Prohibit,Permit, Permit,Prohibit),
       bs))
     : [bs == Bits8 (O,O,O,O,O,O,I,O)] void
 
-prfn bitspermcert_128 {bs:bits}(
+prfn bitspermcert_test_128 {bs:bits}(
     BITS_PERMIT_CERTIFICATE (8,BitPermissions8 (
         Prohibit,Permit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit,
         Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit),
       bs))
     : [bs == Bits8 (I,O,O,O,O,O,O,O)] void
 
-prfn bitspermcert_255 {bs:bits}(
+prfn bitspermcert_test_255 {bs:bits}(
     BITS_PERMIT_CERTIFICATE (8,BitPermissions8 (
         Prohibit,Permit, Prohibit,Permit, Prohibit,Permit, Prohibit,Permit, 
         Prohibit,Permit, Prohibit,Permit, Prohibit,Permit, Prohibit,Permit),
       bs))
     : [bs == Bits8 (I,I,I,I,I,I,I,I)] void
 
-prfn bitspermcert_all {bs:bits}(BITSLEN (bs,8)):
+prfn bitspermcert_test_all {bs:bits}(BITSLEN (bs,8)):
     BITS_PERMIT_CERTIFICATE (8,BitPermissions8 (
         Permit,Permit, Permit,Permit, Permit,Permit, Permit,Permit,
         Permit,Permit, Permit,Permit, Permit,Permit, Permit,Permit),
       bs)
 
-prfn bitspermcert_inhaditat {any_prop:prop}{n:int}{bs:bits}{ps:bit_permissions}
+prfn bitspermcert_test_inhaditat {any_prop:prop}{n:int}{bs:bits}{ps:bit_permissions}
     (BITS_PERMIT_CERTIFICATE (n,
        BitPermsCons(ps,BitPermission (Prohibit,Prohibit)),
        bs)): any_prop
 
 dataprop BIT_PERMS_ADD (bit_permissions,bit_permissions,bit_permissions) =
-| {ps:bit_permissions} BIT_PERMS_ADD_NIL (BitPermsNil (),ps,ps) of ()
-| {p:bit_permission}{ps,qs,rs:bit_permissions}
-  BIT_PERMS_ADD_CONS (BitPermsCons (ps,p),qs,BitPermsCons (rs,p))
-    of BIT_PERMS_ADD (ps,qs,rs)
+ | {ps:bit_permissions} BIT_PERMS_ADD_NIL (BitPermsNil (),ps,ps) of ()
+ | {p:bit_permission}{ps,qs,rs:bit_permissions}
+   BIT_PERMS_ADD_CONS (BitPermsCons (ps,p),qs,BitPermsCons (rs,p))
+     of BIT_PERMS_ADD (ps,qs,rs)
 
-prfun bitspermcerts_prohibit {any_prop:prop}{n:int}{bs:bits}{ps,qs,rs:bit_permissions}
+prfun bitspermcerts_test_prohibit {any_prop:prop}{n:int}{bs:bits}{ps,qs,rs:bit_permissions}
     (BIT_PERMS_ADD (ps,BitPermsCons (qs,BitPermission (Prohibit,Prohibit)),rs),
      BITS_PERMIT_CERTIFICATE (n,rs,bs))
     : any_prop
 
+dataprop PERM_AND (permission,permission,permission) =
+ | {p:permission} PERM_AND_PERM     (Permit,p,p)          of ()
+ | {p:permission} PERM_AND_PROHIBIT (Prohibit,p,Prohibit) of ()
+
+dataprop BIT_PERM_AND (bit_permission,bit_permission,bit_permission) =
+ | {p0,q0,r0,p1,q1,r1:permission}
+   BIT_PERM_AND (BitPermission (p0,p1),BitPermission (q0,q1),BitPermission (r0,r1))
+   of (PERM_AND (p0,q0,r0),PERM_AND (p1,q1,r1))
+
+
+dataprop BIT_PERMS_AND (bit_permissions,bit_permissions,bit_permissions) =
+ | {p,q,r:bit_permission}{ps,qs,rs:bit_permissions}
+   BIT_PERMS_AND (BitPermsCons (ps,p),BitPermsCons (qs,q),BitPermsCons (rs,r))
+   of (BIT_PERM_AND (p,q,r),BIT_PERMS_AND (ps,qs,rs))
+
+// bits（倍のビット長）との変換
+dataprop Perm2Bit (permission,bit) =
+ | Permit2Bit1     (Permit,I)
+ | Prohibit2Bit0 (Prohibit,O)
+
+dataprop BIT_PERM_2_2BIT (bit_permission,bit,bit) =
+ | {p0,p1:permission}{b0,b1:bit} BIT_PERM_2_BITS (BitPermission (p0,p1),b0,b1)
+   of (Perm2Bit (p0,b0),Perm2Bit (p1,b1))
+
+dataprop BIT_PERMS_2_BITS (bit_permissions,bits) =
+ | BIT_PERMS_2_BITS_NIL (BitPermsNil (),BitsNil) of ()
+ | {p:bit_permission}{ps:bit_permissions}{b,c:bit}{bs:bits}
+   BIT_PERMS_ADD_CONS (BitPermsCons (ps,p),BitsCons (BitsCons (bs,b),c))
+     of (BIT_PERM_2_2BIT (p,b,c),BIT_PERMS_2_BITS (ps,bs))
+
+praxi bits_and__bitperms_and {bs,cs,ds:bits}{ps,qs,rs:bit_permissions}
+      (BIT_PERMS_2_BITS (ps,bs),BIT_PERMS_2_BITS (qs,cs),BIT_PERMS_2_BITS (rs,ds),
+       BITS_LAND (bs,cs,ds))
+      : BIT_PERMS_AND (ps,qs,rs)
 
 
 

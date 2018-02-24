@@ -751,14 +751,14 @@ implement {bs} testBitBits {n,bn} (v,bn)
    in (bstest | not (uint_v = i2u(0))) end
 
 (*
-prfn bitspermcert_0 {bs:bits}(
+prfn bitspermcert_test_0 {bs:bits}(
     BITS_PERMIT_CERTIFICATE (8,BitPermissions8 (
         Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit,
         Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit),
       bs))
     : [bs == Bits8 (O,O,O,O,O,O,O,O)] void
 *)
-primplement bitspermcert_0 {bs}(perms)
+primplement bitspermcert_test_0 {bs}(perms)
  = let
      prval BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (
            BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (
@@ -768,14 +768,14 @@ primplement bitspermcert_0 {bs}(perms)
    in bits_eq_refl {bs}() end
 
 (*
-prfn bitspermcert_1 {bs:bits}(
+prfn bitspermcert_test_1 {bs:bits}(
     BITS_PERMIT_CERTIFICATE (8,BitPermissions8 (
         Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit,
         Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Prohibit,Permit),
       bs))
     : [bs == Bits8 (O,O,O,O,O,O,O,I)] void
 *)
-primplement bitspermcert_1 {bs}(perms)
+primplement bitspermcert_test_1 {bs}(perms)
  = let
      prval BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (
            BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (
@@ -786,14 +786,14 @@ primplement bitspermcert_1 {bs}(perms)
    in bits_eq_refl {bs}() end
 
 (*
-prfn bitspermcert_2 {bs:bits}(
+prfn bitspermcert_test_2 {bs:bits}(
     BITS_PERMIT_CERTIFICATE (8,BitPermissions8 (
         Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit,
         Permit,Prohibit, Permit,Prohibit, Prohibit,Permit, Permit,Prohibit),
       bs))
     : [bs == Bits8 (O,O,O,O,O,O,I,O)] void
 *)
-primplement bitspermcert_2 {bs}(perms)
+primplement bitspermcert_test_2 {bs}(perms)
  = let
      prval BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (
            BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (
@@ -803,14 +803,14 @@ primplement bitspermcert_2 {bs}(perms)
    in bits_eq_refl {bs}() end
 
 (*
-prfn bitspermcert_128 {bs:bits}(
+prfn bitspermcert_test_128 {bs:bits}(
     BITS_PERMIT_CERTIFICATE (8,BitPermissions8 (
         Prohibit,Permit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit,
         Permit,Prohibit, Permit,Prohibit, Permit,Prohibit, Permit,Prohibit),
       bs))
     : [bs == Bits8 (I,O,O,O,O,O,O,O)] void
 *)
-primplement bitspermcert_128 {bs}(perms)
+primplement bitspermcert_test_128 {bs}(perms)
  = let
      prval BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (
      			 BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (
@@ -820,14 +820,14 @@ primplement bitspermcert_128 {bs}(perms)
    in bits_eq_refl {bs}() end
 
 (*
-prfn bitspermcert_255 {bs:bits}(
+prfn bitspermcert_test_255 {bs:bits}(
     BITS_PERMIT_CERTIFICATE (8,BitPermissions8 (
         Prohibit,Permit, Prohibit,Permit, Prohibit,Permit, Prohibit,Permit, 
         Prohibit,Permit, Prohibit,Permit, Prohibit,Permit, Prohibit,Permit),
       bs))
     : [bs == Bits8 (I,I,I,I,I,I,I,I)] void
 *)
-primplement bitspermcert_255 {bs}(perms)
+primplement bitspermcert_test_255 {bs}(perms)
  = let
      prval BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (
      			 BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (BITPERMCERTS_CONS (
@@ -837,7 +837,7 @@ primplement bitspermcert_255 {bs}(perms)
    in bits_eq_refl {bs}() end
 
 (*
-prfn bitspermcert_all {bs:bits}(BITSLEN (bs,8)):
+prfn bitspermcert_test_all {bs:bits}(BITSLEN (bs,8)):
     BITS_PERMIT_CERTIFICATE (8,BitPermissions8 (
         Permit,Permit, Permit,Permit, Permit,Permit, Permit,Permit,
         Permit,Permit, Permit,Permit, Permit,Permit, Permit,Permit),
@@ -855,12 +855,12 @@ prfun bitslen0__nil {bs:bits}.<bs>.(bslen:BITSLEN (bs,0)): [bs == BitsNil] void
    | BITSLENNIL ()        =>   bits_eq_refl {bs}()
    | BITSLENCONS (bs'len) =/=> bitslen_nat (bs'len)
 
-(*prfn bitspermcert_all {bs:bits}(BITSLEN (bs,8)):
+(*prfn bitspermcert_test_all {bs:bits}(BITSLEN (bs,8)):
     BITS_PERMIT_CERTIFICATE (8,BitPermissions8 (
         Permit,Permit, Permit,Permit, Permit,Permit, Permit,Permit,
         Permit,Permit, Permit,Permit, Permit,Permit, Permit,Permit),
       bs)*)
-primplement bitspermcert_all {bs8}(bs8len)
+primplement bitspermcert_test_all {bs8}(bs8len)
  = let
      prval BITSLENCONS {n7}{b0}{bs7}(bs7len) = bs8len
      prval BITSLENCONS {n6}{b1}{bs6}(bs6len) = bs7len
@@ -879,13 +879,13 @@ primplement bitspermcert_all {bs8}(bs8len)
    	  bperm_all {b3}()),bperm_all {b2}()),bperm_all {b1}()),bperm_all {b0}()) end
 
 (*
-prfn bitspermcert_inhaditat {any_prop:prop}{n:int}{bs:bits}{ps:bit_permissions}
+prfn bitspermcert_test_inhaditat {any_prop:prop}{n:int}{bs:bits}{ps:bit_permissions}
     (BITS_PERMIT_CERTIFICATE (n,
        BitPermsCons(BitPermission (Prohibit,Prohibit), ps),
        bs)): any_prop
 *)
 
-primplement bitspermcert_inhaditat {any_prop}{n}{bs}{ps}(perms)
+primplement bitspermcert_test_inhaditat {any_prop}{n}{bs}{ps}(perms)
  = let
      prval BITPERMCERTS_CONS (perms',perm) = perms
    in case+ perm of
@@ -894,17 +894,17 @@ primplement bitspermcert_inhaditat {any_prop}{n}{bs}{ps}(perms)
    end
 
 (*
-prfun bitspermcerts_prohibit {any_prop:prop}{n:int}{bs:bits}{ps,qs,rs:bit_permissions}
+prfun bitspermcerts_test_prohibit {any_prop:prop}{n:int}{bs:bits}{ps,qs,rs:bit_permissions}
     (BIT_PERMS_ADD (ps,BitPermsCons (BitPermission (Prohibit,Prohibit),qs),rs),
      BITS_PERMIT_CERTIFICATE (n,rs,bs))
     : any_prop
 *)
-primplement bitspermcerts_prohibit {any_prop}{n}{bs}{ps,qs',rs}(ps_qs_add,perms)
+primplement bitspermcerts_test_prohibit {any_prop}{n}{bs}{ps,qs',rs}(ps_qs_add,perms)
  = case+ ps_qs_add of
-   | BIT_PERMS_ADD_NIL () => bitspermcert_inhaditat (perms)
+   | BIT_PERMS_ADD_NIL () => bitspermcert_test_inhaditat (perms)
    | BIT_PERMS_ADD_CONS {p}{ps',qs,rs'}(ps'_qs_add) => let
        prval BITPERMCERTS_CONS {n'}{r2}{rs'2}{b}{bs'} (perms',perm) = perms
-     in bitspermcerts_prohibit {any_prop}{n'}{bs'}{ps',qs',rs'}(ps'_qs_add,perms') end
+     in bitspermcerts_test_prohibit {any_prop}{n'}{bs'}{ps',qs',rs'}(ps'_qs_add,perms') end
 
 (*
 fn {n:int}{bs,cs:bits} bits_uint_lor (n:bits_uint_t (n,bs),m:bits_uint_t (n,cs)):

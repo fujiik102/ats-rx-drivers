@@ -3,6 +3,11 @@
 
 staload "Bit.sats"
 
+// Target MCU
+#define MCU_RX110
+#define MCU_Package_Pins 64
+
+
 datasort IOPort =
  | Port0 of () | Port1 of () | Port2 of () | Port3 of ()
  | Port4 of () | Port5 of () | Port6 of () | Port7 of ()
@@ -10,18 +15,39 @@ datasort IOPort =
  | PortC of () | PortD of () | PortE of () | PortF of ()
  | PortG of () | PortH of () | PortI of () | PortJ of ()
 
-stadef IOPort2int (p:IOPort):int =
-  ifint (p==Port0, 0, ifint (p==Port1, 1,
-  ifint (p==Port2, 2, ifint (p==Port3, 3,
-  ifint (p==Port4, 4, ifint (p==Port5, 5,
-  ifint (p==Port6, 6, ifint (p==Port7, 7,
-  ifint (p==Port8, 8, ifint (p==Port9, 9,
-  ifint (p==PortA,10, ifint (p==PortB,11,
-  ifint (p==PortC,12, ifint (p==PortD,13,
-  ifint (p==PortE,14, ifint (p==PortF,15,
-  ifint (p==PortG,16, ifint (p==PortH,17,
-  ifint (p==PortI,18, ifint (p==PortJ,19,
-  ~1))))))))))))))))))))
+stacst IOPort2int (p:IOPort):int
+praxi port0_eq_0 ():[IOPort2int Port0 == 0] void
+praxi port1_eq_1 ():[IOPort2int Port1 == 1] void
+praxi port2_eq_2 ():[IOPort2int Port2 == 2] void
+praxi port3_eq_3 ():[IOPort2int Port3 == 3] void
+praxi port4_eq_4 ():[IOPort2int Port4 == 4] void
+praxi port5_eq_5 ():[IOPort2int Port5 == 5] void
+praxi port6_eq_6 ():[IOPort2int Port6 == 6] void
+praxi port7_eq_7 ():[IOPort2int Port7 == 7] void
+praxi port8_eq_8 ():[IOPort2int Port8 == 8] void
+praxi port9_eq_9 ():[IOPort2int Port9 == 9] void
+praxi portA_eq_10 ():[IOPort2int PortA == 10] void
+praxi portB_eq_11 ():[IOPort2int PortB == 11] void
+praxi portC_eq_12 ():[IOPort2int PortC == 12] void
+praxi portD_eq_13 ():[IOPort2int PortD == 13] void
+praxi portE_eq_14 ():[IOPort2int PortE == 14] void
+praxi portF_eq_15 ():[IOPort2int PortF == 15] void
+praxi portG_eq_16 ():[IOPort2int PortG == 16] void
+praxi portH_eq_17 ():[IOPort2int PortH == 17] void
+praxi portI_eq_18 ():[IOPort2int PortI == 18] void
+praxi portJ_eq_19 ():[IOPort2int PortJ == 19] void
+praxi ioport_eq_int ():[
+    IOPort2int Port0 == 0 && IOPort2int Port1 == 1 &&
+    IOPort2int Port2 == 2 && IOPort2int Port3 == 3 &&
+    IOPort2int Port4 == 4 && IOPort2int Port5 == 5 &&
+    IOPort2int Port6 == 6 && IOPort2int Port7 == 7 &&
+    IOPort2int Port8 == 8 && IOPort2int Port9 == 9 &&
+    IOPort2int PortA == 10 && IOPort2int PortB == 11 &&
+    IOPort2int PortC == 12 && IOPort2int PortD == 13 &&
+    IOPort2int PortE == 14 && IOPort2int PortF == 15 &&
+    IOPort2int PortG == 16 && IOPort2int PortH == 17 &&
+    IOPort2int PortI == 18 && IOPort2int PortJ == 19
+  ] void
 
 typedef ioport_t (p:IOPort) = int (IOPort2int p)
 
@@ -95,26 +121,26 @@ dataview PMR_V (IOPort,bits) =
        PMR_BIT_V (Pin (p,3),b3,bisect1), PMR_BIT_V (Pin (p,2),b2,bisect1),
        PMR_BIT_V (Pin (p,1),b1,bisect1), PMR_BIT_V (Pin (p,0),b0,bisect1))
 
-absprop PMR_PERMISSION (IOPort,bit_permissions)
+absview PMR_PERMISSION (IOPort,bit_permissions)
 
-propdef PMR_PERMIT (p:IOPort,bs:bits) =
+viewdef PMR_PERMIT (p:IOPort,bs:bits) =
     [perms:bit_permissions]
     (PMR_PERMISSION (p,perms),BITS_PERMIT_CERTIFICATE (8,perms,bs))
 
-fn {bs,cs:bits}{p:IOPort}
+fn {p:IOPort}{bs,cs:bits}
   writePMR (!PMR_V (p,bs) >> PMR_V (p,cs),
-             PMR_PERMIT (p,cs)
+            !PMR_PERMIT (p,cs)
            | ioport_t p,bits_uint_t (8,cs))
    :<!wrt> void
 
-fn {bs,cs:bits}{p:IOPort}{b:bit}
+fn {p:IOPort}{bs,cs:bits}{b:bit}
   changePMRBit {bn:int | bn < 8}
     (CHANGE_BIT_BITS (8,bs,bn,b,cs),
      !PMR_V (p,bs) >> PMR_V (p,cs),
-     PMR_PERMIT (p,cs)
+     !PMR_PERMIT (p,cs)
     | pin_t (p,bn), bit_uint_t b):<!refwrt> void
 
-fn {bs:bits}{p:IOPort}
+fn {p:IOPort}{bs:bits}
   readPMR (!PMR_V (p,bs) | p:ioport_t p)
    :<!ref> bits_uint_t (8,bs)
 
@@ -212,27 +238,48 @@ dataview PDR_V (p:IOPort,bits) =
        PDR_BIT_V (Pin (p,3),b3,bisect1), PDR_BIT_V (Pin (p,2),b2,bisect1),
        PDR_BIT_V (Pin (p,1),b1,bisect1), PDR_BIT_V (Pin (p,0),b0,bisect1))
 
-absprop PDR_PERMISSION (IOPort,bit_permissions)
+absview PDR_PERMISSION (IOPort,bit_permissions)
 
-propdef PDR_PERMIT (p:IOPort,bs:bits) =
+viewdef PDR_PERMIT (p:IOPort,bs:bits) =
     [perms:bit_permissions]
     (PDR_PERMISSION (p,perms),BITS_PERMIT_CERTIFICATE (8,perms,bs))
 
-fn {p:IOPort}{bs,cs:bits}{v: int}
+fn {p:IOPort}{bs,cs:bits}
   writePDR (!PDR_V (p,bs) >> PDR_V (p,cs),
-             PDR_PERMIT (p,cs)
+            !PDR_PERMIT (p,cs)
            | ioport_t p,bits_uint_t (8,cs)):<!wrt> void
 
-fn {bs,cs:bits}{p:IOPort}{b:bit}
+fn {p:IOPort}{bs,cs:bits}{b:bit}
   changePDRBit {bn:int | bn < 8}
     (CHANGE_BIT_BITS (8,bs,bn,b,cs),
      !PDR_V (p,bs) >> PDR_V (p,cs),
-     PDR_PERMIT (p,cs)
+     !PDR_PERMIT (p,cs)
     | pin_t (p,bn), bit_uint_t b):<!refwrt> void
 
 fn {p:IOPort}{bs:bits}
   readPDR (!PDR_V (p,bs) | ioport_t p)
    :<!ref> bits_uint_t (8,bs)
+
+fn pdr2pdr_bits {p:IOPort}{b7,b6,b5,b4,b3,b2,b1,b0:bit}{v:int}
+   (PDR_V (p,Bits8 (b7,b6,b5,b4,b3,b2,b1,b0)) | bits_uint_t (8,Bits8 (b7,b6,b5,b4,b3,b2,b1,b0)))
+   :(PDR_BIT_V (Pin (p,7),b7,bisect1),
+     PDR_BIT_V (Pin (p,6),b6,bisect1),
+     PDR_BIT_V (Pin (p,5),b5,bisect1),
+     PDR_BIT_V (Pin (p,4),b4,bisect1),
+     PDR_BIT_V (Pin (p,3),b3,bisect1),
+     PDR_BIT_V (Pin (p,2),b2,bisect1),
+     PDR_BIT_V (Pin (p,1),b1,bisect1),
+     PDR_BIT_V (Pin (p,0),b0,bisect1),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),0,b0),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),1,b1),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),2,b2),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),3,b3),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),4,b4),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),5,b5),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),6,b6),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),7,b7)
+    | @(bool (b7 == I),bool (b6 == I),bool (b5 == I),bool (b4 == I),
+        bool (b3 == I),bool (b2 == I),bool (b1 == I),bool (b0 == I)))
 
 
 // PODR
@@ -257,31 +304,48 @@ dataview PODR_V (p:IOPort,bits) =
        PODR_BIT_V (Pin (p,3),b3,bisect1), PODR_BIT_V (Pin (p,2),b2,bisect1),
        PODR_BIT_V (Pin (p,1),b1,bisect1), PODR_BIT_V (Pin (p,0),b0,bisect1))
 
-absprop PODR_PERMISSION (IOPort,bit_permissions)
+absview PODR_PERMISSION (IOPort,bit_permissions)
 
-propdef PODR_PERMIT (p:IOPort,bs:bits) =
+viewdef PODR_PERMIT (p:IOPort,bs:bits) =
     [perms:bit_permissions]
     (PODR_PERMISSION (p,perms),BITS_PERMIT_CERTIFICATE (8,perms,bs))
 
 fn {p:IOPort}{bs,cs:bits}
   writePODR (!PODR_V (p,bs) >> PODR_V (p,cs),
-              PODR_PERMIT (p,cs)
-            | ioport_t p, bits_uint_t (8,cs)):<!wrt> void
+             !PODR_PERMIT (p,cs)
+            | ioport_t p, bits_uint_t (8,cs)):<!wrt> void = "ext#"
 
-fn {bs,cs:bits}{p:IOPort}{b:bit}
+fn {p:IOPort}{bs,cs:bits}{b:bit}
   changePODRBit {bn:int | bn < 8}
     (CHANGE_BIT_BITS (8,bs,bn,b,cs),
      !PODR_V (p,bs) >> PODR_V (p,cs),
-     PODR_PERMIT (p,cs)
+     !PODR_PERMIT (p,cs)
     | pin_t (p,bn), bit_uint_t b):<!refwrt> void
 
 fn {p:IOPort}{bs:bits}
   readPODR (!PODR_V (p,bs) | ioport_t p)
    :<!ref> bits_uint_t (8,bs)
 
-fn {p:IOPort}{n:int}{b:bit}{r:bisectional}
-  readPODRbit (!PODR_BIT_V (Pin (p,n),b,r) | pin:pin_t (p,n))
-   :<!ref> bool (b==I)
+fn podr2podr_bits {p:IOPort}{b7,b6,b5,b4,b3,b2,b1,b0:bit}{v:int}
+   (PODR_V (p,Bits8 (b7,b6,b5,b4,b3,b2,b1,b0)) | bits_uint_t (8,Bits8 (b7,b6,b5,b4,b3,b2,b1,b0)))
+   :(PODR_BIT_V (Pin (p,7),b7,bisect1),
+     PODR_BIT_V (Pin (p,6),b6,bisect1),
+     PODR_BIT_V (Pin (p,5),b5,bisect1),
+     PODR_BIT_V (Pin (p,4),b4,bisect1),
+     PODR_BIT_V (Pin (p,3),b3,bisect1),
+     PODR_BIT_V (Pin (p,2),b2,bisect1),
+     PODR_BIT_V (Pin (p,1),b1,bisect1),
+     PODR_BIT_V (Pin (p,0),b0,bisect1),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),0,b0),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),1,b1),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),2,b2),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),3,b3),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),4,b4),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),5,b5),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),6,b6),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),7,b7)
+    | @(bool (b7 == I),bool (b6 == I),bool (b5 == I),bool (b4 == I),
+        bool (b3 == I),bool (b2 == I),bool (b1 == I),bool (b0 == I)))
 
 // PIDR
 
@@ -296,6 +360,27 @@ dataprop PIDR_P (p:IOPort,bits) =
 
 fn {p:IOPort} readPIDR (ioport_t p)
    :<!ref> [bs:bits] (PIDR_P (p,bs) | bits_uint_t (8,bs))
+
+fn pidr2pidr_bits {p:IOPort}{b7,b6,b5,b4,b3,b2,b1,b0:bit}{v:int}
+   (PIDR_P (p,Bits8 (b7,b6,b5,b4,b3,b2,b1,b0)) | bits_uint_t (8,Bits8 (b7,b6,b5,b4,b3,b2,b1,b0)))
+   :(PIDR_BIT_P (Pin (p,7),b7),
+     PIDR_BIT_P (Pin (p,6),b6),
+     PIDR_BIT_P (Pin (p,5),b5),
+     PIDR_BIT_P (Pin (p,4),b4),
+     PIDR_BIT_P (Pin (p,3),b3),
+     PIDR_BIT_P (Pin (p,2),b2),
+     PIDR_BIT_P (Pin (p,1),b1),
+     PIDR_BIT_P (Pin (p,0),b0),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),0,b0),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),1,b1),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),2,b2),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),3,b3),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),4,b4),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),5,b5),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),6,b6),
+     TEST_BIT_BITS (Bits8 (b7,b6,b5,b4,b3,b2,b1,b0),7,b7)
+    | @(bool (b7 == I),bool (b6 == I),bool (b5 == I),bool (b4 == I),
+        bool (b3 == I),bool (b2 == I),bool (b1 == I),bool (b0 == I)))
 
 // GPIO
 
@@ -312,24 +397,233 @@ fn readPinInput {p:IOPort}{n:int}{isel:bit}{s,r:bisectional}
    !PMR_BIT_V (Pin (p,n),O,s),!PDR_BIT_V (Pin (p,n),O,r) | pin_t (p,n))
    :<!ref> [input:bit] (PinInput (Pin (p,n),input) | bool (input==I))
 
-////
+stadef Bits8_all0 () : bits = Bits8 (O,O,O,O,O,O,O,O)
+stadef Bits8_all1 () : bits = Bits8 (I,I,I,I,I,I,I,I)
 
-// TODO Make a view expressing the setting of output voltage and open drain etc.
-(*
-fn getInitialPinViews () : //<lin>
-    (GPIOView (P0 0,O,I),
-     GPIOView (P0 1,I,O),
-     GPIOView (P1 0,O,O),
-     GPIOView (P1 1,I,I)
-     | void)
-*)
+datasort pin_connection =
+ | GeneralInput of ()
+ | GeneralOutput of bit_permission
+ //| Peripheral of PeripheralFunction
 
-// TODO make initial absprops.
-////
-fn rx110_64pins_initial_views ():<lin> (
-    PODR_PERMISSION (Port0,BitPermissions8 (Permit,Permit,Permit,Permit,Permit,Permit,Permit,Permit)),
-    PODR_V          (Port0,Bits8(O,O,O,O,O,O,O,O)),
-    
-)
+sortdef PinFunction = (Pin,pin_connection)
+
+datasort PinFunctions =
+ | PinFunctionsBase of ()
+ | PinFunctionsInd of (PinFunction,PinFunctions)
+
+absview PinFuncPerm (pin_connection,
+                     pmr_perm:bit_permission,pfs_perm:bit_permission,
+                     pdr_perm:bit_permission,podr_perm:bit_permission)
+
+praxi InputPinPerm ():
+      PinFuncPerm (GeneralInput,
+                   BitPermission (Permit,Prohibit),BitPermission (Permit,Prohibit),
+                   BitPermission (Permit,Prohibit),BitPermission (Permit,Permit))
+
+praxi OutputPinPerm {podr_perm:bit_permission} ():
+      PinFuncPerm (GeneralOutput (podr_perm),
+                   BitPermission (Permit,Prohibit),BitPermission (Permit,Prohibit),
+                   BitPermission (Prohibit,Permit),podr_perm)
+
+stadef BitPerms8_all () : bit_permissions =
+    BitPermissions8 (Permit,Permit,Permit,Permit,Permit,Permit,Permit,Permit,
+                     Permit,Permit,Permit,Permit,Permit,Permit,Permit,Permit)
+
+#if defined(MCU_RX110)
+#if (MCU_Package_Pins == 64)
+praxi rx110_initial_pmr_views () :
+   (PMR_V (Port0,Bits8_all0),PMR_V (Port1,Bits8_all0),
+    PMR_V (Port2,Bits8_all0),PMR_V (Port3,Bits8_all0),
+    PMR_V (Port4,Bits8_all0),PMR_V (Port5,Bits8_all0),
+    PMR_V (PortA,Bits8_all0),PMR_V (PortB,Bits8_all0),
+    PMR_V (PortC,Bits8_all0),PMR_V (PortE,Bits8_all0),
+    PMR_V (PortH,Bits8_all0),PMR_V (PortJ,Bits8_all0),
+    PMR_PERMISSION (Port0,BitPerms8_all), PMR_PERMISSION (Port1,BitPerms8_all),
+    PMR_PERMISSION (Port2,BitPerms8_all), PMR_PERMISSION (Port3,BitPerms8_all),
+    PMR_PERMISSION (Port4,BitPerms8_all), PMR_PERMISSION (Port5,BitPerms8_all),
+    PMR_PERMISSION (PortA,BitPerms8_all), PMR_PERMISSION (PortB,BitPerms8_all),
+    PMR_PERMISSION (PortC,BitPerms8_all), PMR_PERMISSION (PortE,BitPerms8_all),
+    PMR_PERMISSION (PortH,BitPerms8_all), PMR_PERMISSION (PortJ,BitPerms8_all)
+   )
+
+praxi rx110_consume_pmr_views (
+    PMR_V (Port0,Bits8_all0),PMR_V (Port1,Bits8_all0),
+    PMR_V (Port2,Bits8_all0),PMR_V (Port3,Bits8_all0),
+    PMR_V (Port4,Bits8_all0),PMR_V (Port5,Bits8_all0),
+    PMR_V (PortA,Bits8_all0),PMR_V (PortB,Bits8_all0),
+    PMR_V (PortC,Bits8_all0),PMR_V (PortE,Bits8_all0),
+    PMR_V (PortH,Bits8_all0),PMR_V (PortJ,Bits8_all0),
+    PMR_PERMISSION (Port0,BitPerms8_all), PMR_PERMISSION (Port1,BitPerms8_all),
+    PMR_PERMISSION (Port2,BitPerms8_all), PMR_PERMISSION (Port3,BitPerms8_all),
+    PMR_PERMISSION (Port4,BitPerms8_all), PMR_PERMISSION (Port5,BitPerms8_all),
+    PMR_PERMISSION (PortA,BitPerms8_all), PMR_PERMISSION (PortB,BitPerms8_all),
+    PMR_PERMISSION (PortC,BitPerms8_all), PMR_PERMISSION (PortE,BitPerms8_all),
+    PMR_PERMISSION (PortH,BitPerms8_all), PMR_PERMISSION (PortJ,BitPerms8_all)
+   ): void
+
+praxi rx110_initial_pfs_views (): //<lin>
+   (PFS_V (Pin (Port0,0),Bits8_all0),PFS_V (Pin (Port0,1),Bits8_all0),
+    PFS_V (Pin (Port0,2),Bits8_all0),PFS_V (Pin (Port0,3),Bits8_all0),
+    PFS_V (Pin (Port0,4),Bits8_all0),PFS_V (Pin (Port0,5),Bits8_all0),
+    PFS_V (Pin (Port0,6),Bits8_all0),PFS_V (Pin (Port0,7),Bits8_all0),
+    PFS_V (Pin (Port1,0),Bits8_all0),PFS_V (Pin (Port1,1),Bits8_all0),
+    PFS_V (Pin (Port1,2),Bits8_all0),PFS_V (Pin (Port1,3),Bits8_all0),
+    PFS_V (Pin (Port1,4),Bits8_all0),PFS_V (Pin (Port1,5),Bits8_all0),
+    PFS_V (Pin (Port1,6),Bits8_all0),PFS_V (Pin (Port1,7),Bits8_all0),
+    PFS_V (Pin (Port2,0),Bits8_all0),PFS_V (Pin (Port2,1),Bits8_all0),
+    PFS_V (Pin (Port2,2),Bits8_all0),PFS_V (Pin (Port2,3),Bits8_all0),
+    PFS_V (Pin (Port2,4),Bits8_all0),PFS_V (Pin (Port2,5),Bits8_all0),
+    PFS_V (Pin (Port2,6),Bits8_all0),PFS_V (Pin (Port2,7),Bits8_all0),
+    PFS_V (Pin (Port3,0),Bits8_all0),PFS_V (Pin (Port3,1),Bits8_all0),
+    PFS_V (Pin (Port3,2),Bits8_all0),PFS_V (Pin (Port3,3),Bits8_all0),
+    PFS_V (Pin (Port3,4),Bits8_all0),PFS_V (Pin (Port3,5),Bits8_all0),
+    PFS_V (Pin (Port3,6),Bits8_all0),PFS_V (Pin (Port3,7),Bits8_all0),
+    PFS_V (Pin (Port4,0),Bits8_all0),PFS_V (Pin (Port4,1),Bits8_all0),
+    PFS_V (Pin (Port4,2),Bits8_all0),PFS_V (Pin (Port4,3),Bits8_all0),
+    PFS_V (Pin (Port4,4),Bits8_all0),PFS_V (Pin (Port4,5),Bits8_all0),
+    PFS_V (Pin (Port4,6),Bits8_all0),PFS_V (Pin (Port4,7),Bits8_all0),
+    PFS_V (Pin (Port5,0),Bits8_all0),PFS_V (Pin (Port5,1),Bits8_all0),
+    PFS_V (Pin (Port5,2),Bits8_all0),PFS_V (Pin (Port5,3),Bits8_all0),
+    PFS_V (Pin (Port5,4),Bits8_all0),PFS_V (Pin (Port5,5),Bits8_all0),
+    PFS_V (Pin (Port5,6),Bits8_all0),PFS_V (Pin (Port5,7),Bits8_all0),
+    PFS_V (Pin (PortA,0),Bits8_all0),PFS_V (Pin (PortA,1),Bits8_all0),
+    PFS_V (Pin (PortA,2),Bits8_all0),PFS_V (Pin (PortA,3),Bits8_all0),
+    PFS_V (Pin (PortA,4),Bits8_all0),PFS_V (Pin (PortA,5),Bits8_all0),
+    PFS_V (Pin (PortA,6),Bits8_all0),PFS_V (Pin (PortA,7),Bits8_all0),
+    PFS_V (Pin (PortB,0),Bits8_all0),PFS_V (Pin (PortB,1),Bits8_all0),
+    PFS_V (Pin (PortB,2),Bits8_all0),PFS_V (Pin (PortB,3),Bits8_all0),
+    PFS_V (Pin (PortB,4),Bits8_all0),PFS_V (Pin (PortB,5),Bits8_all0),
+    PFS_V (Pin (PortB,6),Bits8_all0),PFS_V (Pin (PortB,7),Bits8_all0),
+    PFS_V (Pin (PortC,0),Bits8_all0),PFS_V (Pin (PortC,1),Bits8_all0),
+    PFS_V (Pin (PortC,2),Bits8_all0),PFS_V (Pin (PortC,3),Bits8_all0),
+    PFS_V (Pin (PortC,4),Bits8_all0),PFS_V (Pin (PortC,5),Bits8_all0),
+    PFS_V (Pin (PortC,6),Bits8_all0),PFS_V (Pin (PortC,7),Bits8_all0),
+    PFS_V (Pin (PortE,0),Bits8_all0),PFS_V (Pin (PortE,1),Bits8_all0),
+    PFS_V (Pin (PortE,2),Bits8_all0),PFS_V (Pin (PortE,3),Bits8_all0),
+    PFS_V (Pin (PortE,4),Bits8_all0),PFS_V (Pin (PortE,5),Bits8_all0),
+    PFS_V (Pin (PortE,6),Bits8_all0),PFS_V (Pin (PortE,7),Bits8_all0),
+    PFS_V (Pin (PortH,0),Bits8_all0),PFS_V (Pin (PortH,1),Bits8_all0),
+    PFS_V (Pin (PortH,2),Bits8_all0),PFS_V (Pin (PortH,3),Bits8_all0),
+    PFS_V (Pin (PortH,4),Bits8_all0),PFS_V (Pin (PortH,5),Bits8_all0),
+    PFS_V (Pin (PortH,6),Bits8_all0),PFS_V (Pin (PortH,7),Bits8_all0),
+    PFS_V (Pin (PortJ,0),Bits8_all0),PFS_V (Pin (PortJ,1),Bits8_all0),
+    PFS_V (Pin (PortJ,2),Bits8_all0),PFS_V (Pin (PortJ,3),Bits8_all0),
+    PFS_V (Pin (PortJ,4),Bits8_all0),PFS_V (Pin (PortJ,5),Bits8_all0),
+    PFS_V (Pin (PortJ,6),Bits8_all0),PFS_V (Pin (PortJ,7),Bits8_all0)
+   )
+
+praxi rx110_consume_pfs_views (
+    PFS_V (Pin (Port0,0),Bits8_all0),PFS_V (Pin (Port0,1),Bits8_all0),
+    PFS_V (Pin (Port0,2),Bits8_all0),PFS_V (Pin (Port0,3),Bits8_all0),
+    PFS_V (Pin (Port0,4),Bits8_all0),PFS_V (Pin (Port0,5),Bits8_all0),
+    PFS_V (Pin (Port0,6),Bits8_all0),PFS_V (Pin (Port0,7),Bits8_all0),
+    PFS_V (Pin (Port1,0),Bits8_all0),PFS_V (Pin (Port1,1),Bits8_all0),
+    PFS_V (Pin (Port1,2),Bits8_all0),PFS_V (Pin (Port1,3),Bits8_all0),
+    PFS_V (Pin (Port1,4),Bits8_all0),PFS_V (Pin (Port1,5),Bits8_all0),
+    PFS_V (Pin (Port1,6),Bits8_all0),PFS_V (Pin (Port1,7),Bits8_all0),
+    PFS_V (Pin (Port2,0),Bits8_all0),PFS_V (Pin (Port2,1),Bits8_all0),
+    PFS_V (Pin (Port2,2),Bits8_all0),PFS_V (Pin (Port2,3),Bits8_all0),
+    PFS_V (Pin (Port2,4),Bits8_all0),PFS_V (Pin (Port2,5),Bits8_all0),
+    PFS_V (Pin (Port2,6),Bits8_all0),PFS_V (Pin (Port2,7),Bits8_all0),
+    PFS_V (Pin (Port3,0),Bits8_all0),PFS_V (Pin (Port3,1),Bits8_all0),
+    PFS_V (Pin (Port3,2),Bits8_all0),PFS_V (Pin (Port3,3),Bits8_all0),
+    PFS_V (Pin (Port3,4),Bits8_all0),PFS_V (Pin (Port3,5),Bits8_all0),
+    PFS_V (Pin (Port3,6),Bits8_all0),PFS_V (Pin (Port3,7),Bits8_all0),
+    PFS_V (Pin (Port4,0),Bits8_all0),PFS_V (Pin (Port4,1),Bits8_all0),
+    PFS_V (Pin (Port4,2),Bits8_all0),PFS_V (Pin (Port4,3),Bits8_all0),
+    PFS_V (Pin (Port4,4),Bits8_all0),PFS_V (Pin (Port4,5),Bits8_all0),
+    PFS_V (Pin (Port4,6),Bits8_all0),PFS_V (Pin (Port4,7),Bits8_all0),
+    PFS_V (Pin (Port5,0),Bits8_all0),PFS_V (Pin (Port5,1),Bits8_all0),
+    PFS_V (Pin (Port5,2),Bits8_all0),PFS_V (Pin (Port5,3),Bits8_all0),
+    PFS_V (Pin (Port5,4),Bits8_all0),PFS_V (Pin (Port5,5),Bits8_all0),
+    PFS_V (Pin (Port5,6),Bits8_all0),PFS_V (Pin (Port5,7),Bits8_all0),
+    PFS_V (Pin (PortA,0),Bits8_all0),PFS_V (Pin (PortA,1),Bits8_all0),
+    PFS_V (Pin (PortA,2),Bits8_all0),PFS_V (Pin (PortA,3),Bits8_all0),
+    PFS_V (Pin (PortA,4),Bits8_all0),PFS_V (Pin (PortA,5),Bits8_all0),
+    PFS_V (Pin (PortA,6),Bits8_all0),PFS_V (Pin (PortA,7),Bits8_all0),
+    PFS_V (Pin (PortB,0),Bits8_all0),PFS_V (Pin (PortB,1),Bits8_all0),
+    PFS_V (Pin (PortB,2),Bits8_all0),PFS_V (Pin (PortB,3),Bits8_all0),
+    PFS_V (Pin (PortB,4),Bits8_all0),PFS_V (Pin (PortB,5),Bits8_all0),
+    PFS_V (Pin (PortB,6),Bits8_all0),PFS_V (Pin (PortB,7),Bits8_all0),
+    PFS_V (Pin (PortC,0),Bits8_all0),PFS_V (Pin (PortC,1),Bits8_all0),
+    PFS_V (Pin (PortC,2),Bits8_all0),PFS_V (Pin (PortC,3),Bits8_all0),
+    PFS_V (Pin (PortC,4),Bits8_all0),PFS_V (Pin (PortC,5),Bits8_all0),
+    PFS_V (Pin (PortC,6),Bits8_all0),PFS_V (Pin (PortC,7),Bits8_all0),
+    PFS_V (Pin (PortE,0),Bits8_all0),PFS_V (Pin (PortE,1),Bits8_all0),
+    PFS_V (Pin (PortE,2),Bits8_all0),PFS_V (Pin (PortE,3),Bits8_all0),
+    PFS_V (Pin (PortE,4),Bits8_all0),PFS_V (Pin (PortE,5),Bits8_all0),
+    PFS_V (Pin (PortE,6),Bits8_all0),PFS_V (Pin (PortE,7),Bits8_all0),
+    PFS_V (Pin (PortH,0),Bits8_all0),PFS_V (Pin (PortH,1),Bits8_all0),
+    PFS_V (Pin (PortH,2),Bits8_all0),PFS_V (Pin (PortH,3),Bits8_all0),
+    PFS_V (Pin (PortH,4),Bits8_all0),PFS_V (Pin (PortH,5),Bits8_all0),
+    PFS_V (Pin (PortH,6),Bits8_all0),PFS_V (Pin (PortH,7),Bits8_all0),
+    PFS_V (Pin (PortJ,0),Bits8_all0),PFS_V (Pin (PortJ,1),Bits8_all0),
+    PFS_V (Pin (PortJ,2),Bits8_all0),PFS_V (Pin (PortJ,3),Bits8_all0),
+    PFS_V (Pin (PortJ,4),Bits8_all0),PFS_V (Pin (PortJ,5),Bits8_all0),
+    PFS_V (Pin (PortJ,6),Bits8_all0),PFS_V (Pin (PortJ,7),Bits8_all0)
+   ): void
+
+praxi rx110_initial_pdr_views ():
+   (PDR_V (Port0,Bits8_all0),PDR_V (Port1,Bits8_all0),
+    PDR_V (Port2,Bits8_all0),PDR_V (Port3,Bits8_all0),
+    PDR_V (Port4,Bits8_all0),PDR_V (Port5,Bits8_all0),
+    PDR_V (PortA,Bits8_all0),PDR_V (PortB,Bits8_all0),
+    PDR_V (PortC,Bits8_all0),PDR_V (PortE,Bits8_all0),
+    PDR_V (PortH,Bits8_all0),PDR_V (PortJ,Bits8_all0),
+    PDR_PERMISSION (Port0,BitPerms8_all), PDR_PERMISSION (Port1,BitPerms8_all),
+    PDR_PERMISSION (Port2,BitPerms8_all), PDR_PERMISSION (Port3,BitPerms8_all),
+    PDR_PERMISSION (Port4,BitPerms8_all), PDR_PERMISSION (Port5,BitPerms8_all),
+    PDR_PERMISSION (PortA,BitPerms8_all), PDR_PERMISSION (PortB,BitPerms8_all),
+    PDR_PERMISSION (PortC,BitPerms8_all), PDR_PERMISSION (PortE,BitPerms8_all),
+    PDR_PERMISSION (PortH,BitPerms8_all), PDR_PERMISSION (PortJ,BitPerms8_all)
+   )
+
+praxi rx110_consume_pdr_views (
+    PDR_V (Port0,Bits8_all0),PDR_V (Port1,Bits8_all0),
+    PDR_V (Port2,Bits8_all0),PDR_V (Port3,Bits8_all0),
+    PDR_V (Port4,Bits8_all0),PDR_V (Port5,Bits8_all0),
+    PDR_V (PortA,Bits8_all0),PDR_V (PortB,Bits8_all0),
+    PDR_V (PortC,Bits8_all0),PDR_V (PortE,Bits8_all0),
+    PDR_V (PortH,Bits8_all0),PDR_V (PortJ,Bits8_all0),
+    PDR_PERMISSION (Port0,BitPerms8_all), PDR_PERMISSION (Port1,BitPerms8_all),
+    PDR_PERMISSION (Port2,BitPerms8_all), PDR_PERMISSION (Port3,BitPerms8_all),
+    PDR_PERMISSION (Port4,BitPerms8_all), PDR_PERMISSION (Port5,BitPerms8_all),
+    PDR_PERMISSION (PortA,BitPerms8_all), PDR_PERMISSION (PortB,BitPerms8_all),
+    PDR_PERMISSION (PortC,BitPerms8_all), PDR_PERMISSION (PortE,BitPerms8_all),
+    PDR_PERMISSION (PortH,BitPerms8_all), PDR_PERMISSION (PortJ,BitPerms8_all)
+   ): void
+
+praxi rx110_initial_podr_views ():
+   (PODR_V (Port0,Bits8_all0),PODR_V (Port1,Bits8_all0),
+    PODR_V (Port2,Bits8_all0),PODR_V (Port3,Bits8_all0),
+    PODR_V (Port4,Bits8_all0),PODR_V (Port5,Bits8_all0),
+    PODR_V (PortA,Bits8_all0),PODR_V (PortB,Bits8_all0),
+    PODR_V (PortC,Bits8_all0),PODR_V (PortE,Bits8_all0),
+    PODR_V (PortH,Bits8_all0),PODR_V (PortJ,Bits8_all0),
+    PODR_PERMISSION (Port0,BitPerms8_all), PODR_PERMISSION (Port1,BitPerms8_all),
+    PODR_PERMISSION (Port2,BitPerms8_all), PODR_PERMISSION (Port3,BitPerms8_all),
+    PODR_PERMISSION (Port4,BitPerms8_all), PODR_PERMISSION (Port5,BitPerms8_all),
+    PODR_PERMISSION (PortA,BitPerms8_all), PODR_PERMISSION (PortB,BitPerms8_all),
+    PODR_PERMISSION (PortC,BitPerms8_all), PODR_PERMISSION (PortE,BitPerms8_all),
+    PODR_PERMISSION (PortH,BitPerms8_all), PODR_PERMISSION (PortJ,BitPerms8_all)
+   )
+
+praxi rx110_consume_podr_views (
+    PODR_V (Port0,Bits8_all0),PODR_V (Port1,Bits8_all0),
+    PODR_V (Port2,Bits8_all0),PODR_V (Port3,Bits8_all0),
+    PODR_V (Port4,Bits8_all0),PODR_V (Port5,Bits8_all0),
+    PODR_V (PortA,Bits8_all0),PODR_V (PortB,Bits8_all0),
+    PODR_V (PortC,Bits8_all0),PODR_V (PortE,Bits8_all0),
+    PODR_V (PortH,Bits8_all0),PODR_V (PortJ,Bits8_all0),
+    PODR_PERMISSION (Port0,BitPerms8_all), PODR_PERMISSION (Port1,BitPerms8_all),
+    PODR_PERMISSION (Port2,BitPerms8_all), PODR_PERMISSION (Port3,BitPerms8_all),
+    PODR_PERMISSION (Port4,BitPerms8_all), PODR_PERMISSION (Port5,BitPerms8_all),
+    PODR_PERMISSION (PortA,BitPerms8_all), PODR_PERMISSION (PortB,BitPerms8_all),
+    PODR_PERMISSION (PortC,BitPerms8_all), PODR_PERMISSION (PortE,BitPerms8_all),
+    PODR_PERMISSION (PortH,BitPerms8_all), PODR_PERMISSION (PortJ,BitPerms8_all)
+   ): void
+
+#endif
+#endif
 
 
