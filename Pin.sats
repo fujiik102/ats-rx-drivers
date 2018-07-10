@@ -16,26 +16,6 @@ datasort IOPort =
  | PortG of () | PortH of () | PortI of () | PortJ of ()
 
 stacst IOPort2int (p:IOPort):int
-praxi port0_eq_0 ():[IOPort2int Port0 == 0] void
-praxi port1_eq_1 ():[IOPort2int Port1 == 1] void
-praxi port2_eq_2 ():[IOPort2int Port2 == 2] void
-praxi port3_eq_3 ():[IOPort2int Port3 == 3] void
-praxi port4_eq_4 ():[IOPort2int Port4 == 4] void
-praxi port5_eq_5 ():[IOPort2int Port5 == 5] void
-praxi port6_eq_6 ():[IOPort2int Port6 == 6] void
-praxi port7_eq_7 ():[IOPort2int Port7 == 7] void
-praxi port8_eq_8 ():[IOPort2int Port8 == 8] void
-praxi port9_eq_9 ():[IOPort2int Port9 == 9] void
-praxi portA_eq_10 ():[IOPort2int PortA == 10] void
-praxi portB_eq_11 ():[IOPort2int PortB == 11] void
-praxi portC_eq_12 ():[IOPort2int PortC == 12] void
-praxi portD_eq_13 ():[IOPort2int PortD == 13] void
-praxi portE_eq_14 ():[IOPort2int PortE == 14] void
-praxi portF_eq_15 ():[IOPort2int PortF == 15] void
-praxi portG_eq_16 ():[IOPort2int PortG == 16] void
-praxi portH_eq_17 ():[IOPort2int PortH == 17] void
-praxi portI_eq_18 ():[IOPort2int PortI == 18] void
-praxi portJ_eq_19 ():[IOPort2int PortJ == 19] void
 praxi ioport_eq_int ():[
     IOPort2int Port0 == 0 && IOPort2int Port1 == 1 &&
     IOPort2int Port2 == 2 && IOPort2int Port3 == 3 &&
@@ -81,7 +61,7 @@ stadef PJ (n:int):Pin = Pin (PortJ,n)
 // Special form of fractional (n/2^m only)
 datasort bisectional = bisectional of (int,int)
 
-stadef bisect1 = bisectional (0,1)
+stadef bisect1 = bisectional (1,0)
 
 dataprop EQBISECTIONAL (bisectional, bisectional) = {r:bisectional} EQBISECTIONAL (r, r)
 praxi eqbisectional_make {r,s:bisectional | r == s} () : EQBISECTIONAL (r,s)
@@ -94,10 +74,16 @@ stacst bisectional_add_b : (bisectional,bisectional,bisectional) -> bool
 praxi {n1,n2,m:int} bisectional_add_axi ():
       [bisectional_add_b (bisectional (n1,m),bisectional (n2,m),bisectional (n1+n2,m))] unit_p
 
+praxi bisectional_add_axi_rev
+ {n1,n2,n3,m:int | bisectional_add_b (bisectional (n1,m),bisectional (n2,m),bisectional (n3,m))}(): [n1+n2==n3] unit_p
+
+
 stacst bisectional_half_b : (bisectional,bisectional) -> bool
 
 praxi {n,m:int} bisectional_half_axi ():
       [bisectional_half_b (bisectional (n,m),bisectional (n,m+1))] unit_p
+
+praxi {n,m,l:int} bisectional_half_axi_rev {bisectional_half_b (bisectional (n,m),bisectional (n,l))}(): [m+1==l] unit_p
 
 // PMR
 
@@ -399,32 +385,6 @@ fn readPinInput {p:IOPort}{n:int}{isel:bit}{s,r:bisectional}
 
 stadef Bits8_all0 () : bits = Bits8 (O,O,O,O,O,O,O,O)
 stadef Bits8_all1 () : bits = Bits8 (I,I,I,I,I,I,I,I)
-
-datasort pin_connection =
- | GeneralInput of ()
- | GeneralOutput of bit_permission
- //| Peripheral of PeripheralFunction
-
-sortdef PinFunction = (Pin,pin_connection)
-
-datasort PinFunctions =
- | PinFunctionsBase of ()
- | PinFunctionsInd of (PinFunction,PinFunctions)
-
-absview PinFuncPerm (pin_connection,
-                     pmr_perm:bit_permission,pfs_perm:bit_permission,
-                     pdr_perm:bit_permission,podr_perm:bit_permission)
-
-praxi InputPinPerm ():
-      PinFuncPerm (GeneralInput,
-                   BitPermission (Permit,Prohibit),BitPermission (Permit,Prohibit),
-                   BitPermission (Permit,Prohibit),BitPermission (Permit,Permit))
-
-praxi OutputPinPerm {podr_perm:bit_permission} ():
-      PinFuncPerm (GeneralOutput (podr_perm),
-                   BitPermission (Permit,Prohibit),BitPermission (Permit,Prohibit),
-                   BitPermission (Prohibit,Permit),podr_perm)
-
 stadef BitPerms8_all () : bit_permissions =
     BitPermissions8 (Permit,Permit,Permit,Permit,Permit,Permit,Permit,Permit,
                      Permit,Permit,Permit,Permit,Permit,Permit,Permit,Permit)

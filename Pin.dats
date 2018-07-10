@@ -43,6 +43,15 @@ extern fun readPODR_impl (p: ioport_impl_type):<!ref> bits8_uint_impl_type = "ex
 extern fun readPIDR_impl (p: ioport_impl_type):<!ref> bits8_uint_impl_type = "ext#"
 
 
+extern prfn bisect_spec_half_plus_half__full {r,s,t,u:bisectional | bisectional_half_b (r,s) && bisectional_half_b (r,t) && bisectional_add_b (s,t,u)} (): [r==u] void
+
+extern prfn bisect_spec_mul2_half__one {r,s,t,u:bisectional | bisectional_add_b (r,r,s) && bisectional_half_b (s,t)} (): [r==t] void
+
+prfn biset_half (): [bisectional_half_b (bisect1,bisectional (1,1))] void
+ = let
+   prval unitp = bisectional_half_axi<1,0> ()
+ in end
+
 
 // PMR
 implement {p}{bs,cs}{b} changePMRBit {bn}
