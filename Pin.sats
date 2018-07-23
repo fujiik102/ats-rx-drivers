@@ -421,7 +421,7 @@ praxi rx110_consume_pmr_views (
     PMR_PERMISSION (PortH,BitPerms8_all), PMR_PERMISSION (PortJ,BitPerms8_all)
    ): void
 
-praxi rx110_initial_pfs_views (): //<lin>
+praxi rx110_initial_pfs_views ():
    (PFS_V (Pin (Port0,0),Bits8_all0),PFS_V (Pin (Port0,1),Bits8_all0),
     PFS_V (Pin (Port0,2),Bits8_all0),PFS_V (Pin (Port0,3),Bits8_all0),
     PFS_V (Pin (Port0,4),Bits8_all0),PFS_V (Pin (Port0,5),Bits8_all0),
